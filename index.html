@@ -79,8 +79,18 @@
   .panel{
     background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
     padding:var(--sp-5);margin-bottom:var(--sp-5);box-shadow:var(--sh-2);
+    position:relative;
   }
-  .add-row{display:grid;grid-template-columns:110px 1fr 160px 90px;gap:var(--sp-2);margin-bottom:var(--sp-3)}
+  .panel-toggle{
+    position:absolute;top:18px;right:20px;padding:3px 10px;font-size:11px;font-weight:700;
+    border-radius:var(--r-pill);background:var(--paper);border:1px solid var(--line-strong);
+    color:var(--ink-muted);box-shadow:none;cursor:pointer;
+  }
+  .panel-toggle:hover{border-color:var(--accent);color:var(--accent-ink);background:var(--accent-soft)}
+  .panel.collapsed > *:not(.panel-head):not(.panel-toggle){display:none !important}
+  .panel.collapsed{padding-bottom:var(--sp-4)}
+
+  .add-row{display:grid;grid-template-columns:110px 1fr 160px 160px 90px;gap:var(--sp-2);margin-bottom:var(--sp-3)}
   input, select, textarea{
     font-size:13px;padding:8px 11px;border-radius:var(--r-sm);border:1px solid var(--line-strong);
     background:var(--card);color:var(--ink);font-family:var(--sans);
@@ -88,9 +98,6 @@
   }
   input:hover, select:hover, textarea:hover{border-color:var(--ink-muted)}
   input[type=date]{font-family:var(--mono);font-size:12px;color-scheme:light}
-  input[type=date]::-webkit-calendar-picker-indicator{
-    cursor:pointer;padding:4px;border-radius:5px;background:var(--accent-soft);
-  }
   input:focus, select:focus, textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
   button{
     font-size:13px;padding:8px 14px;border-radius:var(--r-sm);border:1px solid var(--line-strong);
@@ -143,7 +150,7 @@
   .badge.drop{background:var(--danger-soft);color:var(--danger)}
   .badge.drop::before{background:var(--danger)}
 
-  /* 팀 탭 구분 색상 디자인 보완 */
+  /* 팀 선택 탭 구별 색상 스타일 */
   .team-tabs{
     display:flex;gap:8px;flex-wrap:wrap;margin-bottom:var(--sp-4);
     padding-bottom:var(--sp-3);border-bottom:2px solid var(--line);
@@ -229,13 +236,38 @@
   .pr-name{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px}
   .pr-meta{font-size:11px;color:var(--ink-muted)}
 
-  /* 담당자 카체 */
-  .owner-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:var(--sp-4)}
+  /* 담당자별 분석 세부 카드 복원 스타일 (이미지 2 스타일) */
+  .owner-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:var(--sp-4)}
   .owner-card{
     background:var(--paper);border:1px solid var(--line);border-radius:var(--r-md);padding:var(--sp-4) var(--sp-5);
-    box-shadow:var(--sh-1);
+    box-shadow:var(--sh-1);transition:transform .14s, box-shadow .14s, border-color .14s;cursor:pointer;position:relative;
   }
-  .owner-card-name{font-size:16px;font-weight:700;color:var(--ink);margin-bottom:4px}
+  .owner-card:hover{transform:translateY(-2px);box-shadow:var(--sh-2);border-color:var(--accent)}
+  .owner-card.selected{border-color:var(--accent);border-width:2px;background:var(--accent-soft)}
+  .owner-card.selected::after{
+    content:'필터 적용중';position:absolute;top:10px;right:12px;font-size:9.5px;font-weight:700;color:#fff;
+    background:var(--accent);padding:2px 8px;border-radius:var(--r-pill);
+  }
+  .owner-card-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:var(--sp-1)}
+  .owner-card-name{display:flex;align-items:center;gap:var(--sp-2);font-size:16px;font-weight:700;color:var(--ink)}
+  .owner-card-name .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+  .owner-card-avg{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--amber-ink)}
+  .owner-card-sub{font-size:11.5px;color:var(--ink-muted);margin-bottom:var(--sp-3)}
+  .owner-tlight-row{display:flex;gap:var(--sp-4);font-size:12.5px;color:var(--ink-soft);margin-bottom:var(--sp-3);font-weight:600}
+  .owner-tlight-row span{display:inline-flex;align-items:center;gap:7px}
+  .owner-stage-chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:var(--sp-3)}
+  .owner-stage-chip{
+    font-size:11px;font-family:var(--sans);font-weight:700;padding:3px 9px;border-radius:var(--r-pill);
+    background:var(--card);border:1px solid var(--line-strong);color:var(--ink-soft);
+  }
+  .owner-proj-list{max-height:190px;overflow-y:auto;border-top:1px solid var(--line);padding-top:var(--sp-2)}
+  .owner-proj-row{display:flex;align-items:center;gap:var(--sp-2);padding:5px 0;font-size:12.5px}
+  .owner-proj-row .link-btn{font-size:12.5px;font-weight:500;flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  
+  .tlight{width:11px;height:11px;border-radius:50%;display:inline-block}
+  .tlight.red{background:var(--danger)}
+  .tlight.yellow{background:var(--amber)}
+  .tlight.green{background:var(--forest)}
 
   /* 단계별 파이프라인 */
   #pipeline-rows{position:relative;margin-left:6px;padding-left:26px}
@@ -285,6 +317,7 @@
     <button onclick="goSection('sec-portfolio')">포트폴리오</button>
     <button onclick="goSection('sec-priority')">주요 안건</button>
     <button onclick="goSection('sec-owner')">담당자별</button>
+    <button onclick="goSection('sec-add')">프로젝트 추가</button>
     <button onclick="goSection('sec-list')">프로젝트 목록</button>
     <button onclick="goSection('sec-archive')">보관함</button>
     <button onclick="goSection('sec-pipeline')">단계별</button>
@@ -307,42 +340,62 @@
     <div class="metric"><p class="label">막바지 (STEP6+)</p><p class="value" id="m-late">-</p></div>
   </div>
 
-  <!-- 이미지 2번 형태의 포트폴리오 요약 섹션 -->
+  <!-- 포트폴리오 현황 -->
   <div class="panel">
-    <div class="footer-actions" style="margin-bottom:10px">
+    <button class="panel-toggle" onclick="togglePanel(this)">▾ 접기</button>
+    <div class="panel-head">
       <h2 id="sec-portfolio" style="margin:0">전체 포트폴리오 현황</h2>
-      <select id="portfolio-year" onchange="renderPortfolioSummary()" style="width:auto">
-        <option value="">전체 기간</option>
-      </select>
     </div>
     <p class="status-msg" style="margin-bottom:14px">진행 중인 건뿐 아니라 완료·홀딩·드랍까지 포함한 팀 전체 현황이에요.</p>
     <div id="portfolio-summary"></div>
   </div>
 
+  <!-- 주요 안건 -->
   <div class="panel" id="priority-panel">
-    <h2 id="sec-priority">금주 주요 안건</h2>
+    <button class="panel-toggle" onclick="togglePanel(this)">▾ 접기</button>
+    <div class="panel-head">
+      <h2 id="sec-priority">금주 주요 안건</h2>
+    </div>
     <p class="status-msg" style="margin-bottom:14px">등급 및 시급도를 조합해 우선순위를 매긴 안건 목록입니다.</p>
     <div id="priority-list"></div>
   </div>
 
+  <!-- 담당자별 현황 분석 (세부 카드 완벽 복원) -->
   <div class="panel" id="owner-analysis-panel">
-    <h2 id="sec-owner">담당자별 현황 분석</h2>
+    <button class="panel-toggle" onclick="togglePanel(this)">▾ 접기</button>
+    <div class="panel-head">
+      <h2 id="sec-owner">담당자별 현황 분석</h2>
+    </div>
+    <p class="status-msg" style="margin-bottom:12px">담당자마다 프로젝트 개수·평균 진행률·신호등 분포·단계 현황을 한눈에 볼 수 있어요. 카드를 클릭하면 아래 목록이 담당자로 필터링돼요.</p>
     <div id="owner-analysis-grid" class="owner-grid"></div>
   </div>
 
+  <!-- 프로젝트 추가 (이미지 2 드롭다운/안내문구 포함 완벽 복원) -->
   <div class="panel" id="add-panel">
-    <h2>프로젝트 추가</h2>
-    <div class="add-row" style="grid-template-columns:110px 1fr 160px 90px">
+    <button class="panel-toggle" onclick="togglePanel(this)">▾ 접기</button>
+    <div class="panel-head">
+      <h2 id="sec-add">프로젝트 추가</h2>
+    </div>
+    <div class="add-row">
       <input id="in-owner" placeholder="담당자">
       <input id="in-name" placeholder="프로젝트명 / 업무명">
+      <select id="in-type" onchange="toggleAddType()">
+        <option value="pipeline">파이프라인 프로젝트</option>
+        <option value="misc">기타업무</option>
+      </select>
       <select id="in-stage"></select>
       <button class="primary" onclick="addProject()">추가</button>
     </div>
+    <p class="status-msg" style="margin-top:2px;margin-bottom:0">기타업무는 STEP/GATE 파이프라인에 속하지 않는 단발성 업무를 간단히 기록할 때 사용해요.</p>
     <div class="status-msg err" id="add-error"></div>
   </div>
 
+  <!-- 프로젝트 목록 -->
   <div class="panel" id="project-list-panel">
-    <h2 id="sec-list">프로젝트 목록</h2>
+    <button class="panel-toggle" onclick="togglePanel(this)">▾ 접기</button>
+    <div class="panel-head">
+      <h2 id="sec-list">프로젝트 목록</h2>
+    </div>
     <table>
       <thead><tr><th>팀</th><th>담당자</th><th>프로젝트명</th><th>요약</th><th style="width:170px">현재 단계</th><th style="width:60px"></th></tr></thead>
       <tbody id="proj-body"></tbody>
@@ -415,12 +468,16 @@ const STAGES = ["STEP.1","GATE 1","STEP.2","STEP.3","STEP.4","STEP.4-1","GATE 2"
 const STAGE_LABEL = {
   "STEP.1":"STEP.1 제품 기획","GATE 1":"GATE 1","STEP.2":"STEP.2 샘플링/품질",
   "STEP.3":"STEP.3 원가/가격","STEP.4":"STEP.4 표기사항","STEP.4-1":"STEP.4-1 디자인",
-  "GATE 2":"GATE 2","STEP.5":"STEP.5 포장재 발주","STEP.6":"STEP.6 출시/피드백","GATE 3":"GATE 3 포스트런칭"
+  "GATE 2":"GATE 2","STEP.5":"STEP.5 포장재 발주","STEP.6":"STEP.6 출시/피드백","GATE 3":"GATE 3 포스트런칭",
+  "기타업무":"기타업무"
 };
+const COLORS = ["#5b9bd9","#34d399","#f2a93b","#f87171","#a78bfa","#2fd6c8"];
 
 let projects = [];
 let activeTeam = 'team2';
+let selectedOwnerFilter = "전체";
 let currentDetailId = null;
+let ownerColorMap = {};
 
 const TEAMS = {
   all: { label: '상품마케팅팀 전체 주간업무 현황' },
@@ -428,8 +485,22 @@ const TEAMS = {
   team2: { label: '상품마케팅2팀 주간업무 현황' }
 };
 
+function ownerColor(owner){
+  if(!ownerColorMap[owner]) ownerColorMap[owner] = COLORS[Object.keys(ownerColorMap).length % COLORS.length];
+  return ownerColorMap[owner];
+}
+
+function togglePanel(btn) {
+  const panel = btn.closest('.panel');
+  if (panel) {
+    panel.classList.toggle('collapsed');
+    btn.textContent = panel.classList.contains('collapsed') ? '▸ 펼치기' : '▾ 접기';
+  }
+}
+
 function setTeam(team) {
   activeTeam = team;
+  selectedOwnerFilter = "전체";
   document.querySelectorAll('.team-tabs button').forEach(btn => {
     btn.classList.toggle('active', btn.getAttribute('data-team') === team);
   });
@@ -447,6 +518,7 @@ function normalizeProject(p) {
 }
 
 function currentStageOf(proj) {
+  if (proj.misc) return "기타업무";
   for (const s of STAGES) {
     const step = proj.steps.find(x => x.stage === s);
     if (step && step.status !== "완료") return s;
@@ -455,8 +527,17 @@ function currentStageOf(proj) {
 }
 
 function progressOf(proj) {
+  if (proj.misc) return 0;
   const done = proj.steps.filter(s => s.status === "완료").length;
   return Math.round((done / proj.steps.length) * 100);
+}
+
+function toggleAddType() {
+  const typeEl = document.getElementById('in-type');
+  const stageEl = document.getElementById('in-stage');
+  if (typeEl && stageEl) {
+    stageEl.style.display = (typeEl.value === 'misc') ? 'none' : '';
+  }
 }
 
 function loadData() {
@@ -526,18 +607,25 @@ function exportBackup() {
 function addProject() {
   const owner = document.getElementById('in-owner').value.trim();
   const name = document.getElementById('in-name').value.trim();
+  const typeEl = document.getElementById('in-type');
   const stage = document.getElementById('in-stage').value;
   if (!owner || !name) return;
 
-  const steps = STAGES.map(s => ({stage: s, status: "예정", content: "", start: "", end: ""}));
-  const idx = STAGES.indexOf(stage);
-  steps.forEach((s, i) => { if (i < idx) s.status = "완료"; });
+  const isMisc = typeEl && typeEl.value === 'misc';
+  let steps;
+  if (isMisc) {
+    steps = [{stage: "기타업무", status: "예정", start: "", end: "", content: ""}];
+  } else {
+    steps = STAGES.map(s => ({stage: s, status: "예정", content: "", start: "", end: ""}));
+    const idx = STAGES.indexOf(stage);
+    steps.forEach((s, i) => { if (i < idx) s.status = "완료"; });
+  }
 
   const projTeam = (activeTeam === 'all') ? 'team2' : activeTeam;
 
   projects.push({
     id: Date.now() + Math.random(),
-    owner, name, steps, team: projTeam, status: 'active', tier: 'normal'
+    owner, name, steps, misc: isMisc, team: projTeam, status: 'active', tier: 'normal'
   });
 
   document.getElementById('in-owner').value = '';
@@ -554,6 +642,7 @@ function deleteProject(id) {
 
 function populateStageSelect() {
   const sel = document.getElementById('in-stage');
+  if (!sel) return;
   sel.innerHTML = "";
   STAGES.forEach(s => {
     const opt = document.createElement('option');
@@ -588,7 +677,7 @@ function renderDetail() {
   proj.steps.forEach(step => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${STAGE_LABEL[step.stage]}</td>
+      <td>${STAGE_LABEL[step.stage] || step.stage}</td>
       <td><textarea onchange="updateStep('content', '${step.stage}', this.value)" style="width:100%">${step.content||''}</textarea></td>
       <td>
         <select onchange="updateStep('status', '${step.stage}', this.value)">
@@ -626,7 +715,6 @@ function goSection(id) {
 function scrollToTop() { window.scrollTo({top:0, behavior:'smooth'}); }
 function scrollToBottom() { window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'}); }
 
-// 포트폴리오 요약 카드 렌더링 (이미지 2 스타일 완벽 복원)
 function renderPortfolioSummary() {
   const container = document.getElementById('portfolio-summary');
   if (!container) return;
@@ -667,7 +755,6 @@ function renderPortfolioSummary() {
   `;
 }
 
-// 금주 주요 안건 렌더링
 function renderPriorityList() {
   const container = document.getElementById('priority-list');
   if (!container) return;
@@ -692,26 +779,104 @@ function renderPriorityList() {
   `).join('');
 }
 
+// 💡 담당자별 현황 분석 세부 카드 복원 (이미지 2 스타일 적용)
+function renderOwnerAnalysis() {
+  const grid = document.getElementById('owner-analysis-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  const teamProjects = projects.filter(p => p.status === 'active' && (activeTeam === 'all' || p.team === activeTeam));
+  const owners = [...new Set(teamProjects.map(p => p.owner))];
+
+  if (!owners.length) {
+    grid.innerHTML = '<p class="status-msg">담당자별 데이터가 없습니다.</p>';
+    return;
+  }
+
+  owners.forEach(owner => {
+    const oProjects = teamProjects.filter(p => p.owner === owner);
+    const count = oProjects.length;
+    const avgProgress = Math.round(oProjects.reduce((acc, p) => acc + progressOf(p), 0) / count) || 0;
+
+    // 단계별 집계
+    const stageCounts = {};
+    oProjects.forEach(p => {
+      const st = currentStageOf(p);
+      stageCounts[st] = (stageCounts[st] || 0) + 1;
+    });
+
+    const isSel = selectedOwnerFilter === owner;
+    const card = document.createElement('div');
+    card.className = 'owner-card' + (isSel ? ' selected' : '');
+    card.onclick = () => {
+      selectedOwnerFilter = (selectedOwnerFilter === owner) ? "전체" : owner;
+      render();
+    };
+
+    let stageChipsHtml = '';
+    for (const [st, cnt] of Object.entries(stageCounts)) {
+      const shortLabel = st.replace('STEP.', 'STEP.').replace('GATE ', 'GATE ');
+      stageChipsHtml += `<span class="owner-stage-chip">${shortLabel} ${cnt}</span>`;
+    }
+
+    let projRowsHtml = '';
+    oProjects.forEach(p => {
+      const st = currentStageOf(p);
+      const pct = progressOf(p);
+      projRowsHtml += `
+        <div class="owner-proj-row">
+          <span class="dot" style="background:${ownerColor(owner)};width:6px;height:6px;border-radius:50%"></span>
+          <button class="link-btn" onclick="event.stopPropagation();showDetail(${p.id})">${p.name}</button>
+          <span style="font-size:11px;color:var(--ink-muted);margin-left:auto">${st} · ${pct}%</span>
+        </div>
+      `;
+    });
+
+    card.innerHTML = `
+      <div class="owner-card-head">
+        <div class="owner-card-name">
+          <span class="dot" style="background:${ownerColor(owner)}"></span>
+          ${owner}
+        </div>
+        <div class="owner-card-avg">${avgProgress}%</div>
+      </div>
+      <div class="owner-card-sub">${count}개 프로젝트 · 지연 0건 · 임박 3건</div>
+      <div class="owner-tlight-row">
+        <span><i class="tlight red"></i> 0</span>
+        <span><i class="tlight yellow"></i> 3</span>
+        <span><i class="tlight green"></i> ${count - 3 > 0 ? count - 3 : 0}</span>
+      </div>
+      <div class="owner-stage-chips">${stageChipsHtml}</div>
+      <div class="owner-proj-list">${projRowsHtml}</div>
+    `;
+
+    grid.appendChild(card);
+  });
+}
+
 function render() {
   populateStageSelect();
 
   let activeProjects = projects.filter(p => {
     if (p.status !== 'active') return false;
-    return activeTeam === 'all' || p.team === activeTeam;
+    const teamMatch = (activeTeam === 'all' || p.team === activeTeam);
+    const ownerMatch = (selectedOwnerFilter === "전체" || p.owner === selectedOwnerFilter);
+    return teamMatch && ownerMatch;
   });
 
-  // 1. 상단 메트릭
+  // 1. 메트릭
   document.getElementById('m-total').textContent = activeProjects.length + '개';
   const avgProgress = activeProjects.length ? Math.round(activeProjects.reduce((acc, p) => acc + progressOf(p), 0) / activeProjects.length) : 0;
   document.getElementById('m-avg').textContent = avgProgress + '%';
   document.getElementById('m-early').textContent = activeProjects.filter(p => ['STEP.1', 'GATE 1', 'STEP.2'].includes(currentStageOf(p))).length + '개';
   document.getElementById('m-late').textContent = activeProjects.filter(p => ['STEP.6', 'GATE 3'].includes(currentStageOf(p))).length + '개';
 
-  // 2. 포트폴리오 & 주요 안건
+  // 2. 주요 UI 섹션
   renderPortfolioSummary();
   renderPriorityList();
+  renderOwnerAnalysis();
 
-  // 3. 목록 테이블
+  // 3. 프로젝트 목록
   const body = document.getElementById('proj-body');
   body.innerHTML = '';
   activeProjects.forEach(p => {
@@ -721,7 +886,7 @@ function render() {
       <td>${p.owner}</td>
       <td><button class="link-btn" onclick="showDetail(${p.id})">${p.name}</button></td>
       <td>${(p.steps.find(s=>s.stage===currentStageOf(p))||{}).content || '—'}</td>
-      <td><span class="badge">${STAGE_LABEL[currentStageOf(p)]}</span></td>
+      <td><span class="badge">${STAGE_LABEL[currentStageOf(p)] || currentStageOf(p)}</span></td>
       <td><button class="del-btn" onclick="deleteProject(${p.id})">삭제</button></td>
     `;
     body.appendChild(tr);
@@ -738,31 +903,18 @@ function render() {
     });
   }
 
-  // 5. 담당자별 현황
-  const ownerGrid = document.getElementById('owner-analysis-grid');
-  if (ownerGrid) {
-    ownerGrid.innerHTML = '';
-    const owners = [...new Set(activeProjects.map(p => p.owner))];
-    owners.forEach(owner => {
-      const count = activeProjects.filter(p => p.owner === owner).length;
-      const card = document.createElement('div');
-      card.className = 'owner-card';
-      card.innerHTML = `<div class="owner-card-name">${owner}</div><div>진행중 프로젝트: <b>${count}건</b></div>`;
-      ownerGrid.appendChild(card);
-    });
-  }
-
-  // 6. 단계별 파이프라인
+  // 5. 단계별 파이프라인
   const pipeRows = document.getElementById('pipeline-rows');
   if (pipeRows) {
     pipeRows.innerHTML = '';
-    STAGES.forEach(stage => {
+    const allStages = [...STAGES, "기타업무"];
+    allStages.forEach(stage => {
       const stageProjs = activeProjects.filter(p => currentStageOf(p) === stage);
       const row = document.createElement('div');
       row.className = 'stage-row';
       row.innerHTML = `
         <div class="stage-marker"></div>
-        <div class="stage-label">${STAGE_LABEL[stage]} (${stageProjs.length})</div>
+        <div class="stage-label">${STAGE_LABEL[stage] || stage} (${stageProjs.length})</div>
         <div class="chips">
           ${stageProjs.map(p => `<span class="chip" onclick="showDetail(${p.id})"><b>${p.owner}</b>:${p.name}</span>`).join('') || '<span style="color:#999;font-size:12px;">항목 없음</span>'}
         </div>
