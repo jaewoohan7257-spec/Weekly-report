@@ -197,6 +197,15 @@
   }
   .scroll-fab button:hover{background:var(--accent);border-color:var(--accent);color:#fff}
 
+  /* 지연/임박 알림 배너 스타일 */
+  .danger-banner{
+    display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap;
+    padding:var(--sp-3) var(--sp-4);border-radius:var(--r-md);background:var(--danger-soft);
+    border:1px solid var(--danger);border-left:3px solid var(--danger);
+    margin-bottom:var(--sp-5);box-shadow:var(--sh-2);
+  }
+  .danger-banner p{margin:0;font-size:13.5px;color:var(--danger);font-weight:700}
+
   /* 포트폴리오 스타일 */
   .pf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:var(--sp-3);margin-bottom:var(--sp-4)}
   .pf-card{
@@ -236,7 +245,7 @@
   .pr-name{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px}
   .pr-meta{font-size:11px;color:var(--ink-muted)}
 
-  /* 담당자별 분석 세부 카드 복원 스타일 (이미지 2 스타일) */
+  /* 담당자별 분석 세부 카드 복원 스타일 */
   .owner-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:var(--sp-4)}
   .owner-card{
     background:var(--paper);border:1px solid var(--line);border-radius:var(--r-md);padding:var(--sp-4) var(--sp-5);
@@ -287,6 +296,10 @@
   .progress-bar{height:7px;border-radius:99px;background:var(--line);overflow:hidden;margin:10px 0 6px}
   .progress-bar > div{height:100%;background:var(--accent);transition:width .2s}
 
+  .tier-star{color:var(--amber);font-size:12px}
+  .tier-toggle{border:none;background:none;cursor:pointer;font-size:15px;color:var(--ink-muted)}
+  .tier-toggle.on{color:var(--amber)}
+
   #detail-view{display:none}
   #list-view{display:block}
 </style>
@@ -302,8 +315,13 @@
     </div>
     <button class="primary" onclick="exportAllToExcel()" style="flex-shrink:0">⬇ 팀 전체 엑셀 다운로드</button>
     <button onclick="manualRefresh()" style="flex-shrink:0">🔄 새로고침</button>
+    <button class="primary" onclick="generateReportPPT(this)" style="flex-shrink:0">📊 보고서 PPT 다운로드</button>
+    <button onclick="togglePptSettings()" style="flex-shrink:0">⚙️ PPT 설정</button>
   </div>
   <p class="status-msg" id="live-status" style="margin:0 0 10px"></p>
+
+  <!-- 지연/임박 경고 배너 -->
+  <div id="new-overdue-banner"></div>
 
   <!-- 팀 선택 탭 -->
   <div class="team-tabs" id="team-tabs">
@@ -322,7 +340,23 @@
     <button onclick="goSection('sec-archive')">보관함</button>
     <button onclick="goSection('sec-pipeline')">단계별</button>
     <button onclick="goSection('sec-timeline')">타임라인</button>
+    <button onclick="goSection('sec-snapshot')">스냅샷</button>
   </nav>
+
+  <!-- PPT 맞춤 설정 패널 -->
+  <div class="panel" id="ppt-settings-panel" style="display:none">
+    <h2>PPT 보고서 설정</h2>
+    <p class="status-msg" style="margin-bottom:14px">여기서 수정한 내용은 저장돼서 다음에 PPT를 만들 때도 그대로 적용돼요.</p>
+    <div style="display:grid;grid-template-columns:150px 1fr;gap:10px 14px;align-items:center;margin-bottom:16px">
+      <label style="font-size:12.5px;font-weight:600">표지 제목</label>
+      <input id="ppt-title" placeholder="상품마케팅팀 제품개발 파이프라인">
+      <label style="font-size:12.5px;font-weight:600">표지 부제</label>
+      <input id="ppt-subtitle" placeholder="주간보고 · 기준일">
+    </div>
+    <div class="footer-actions">
+      <button class="primary" onclick="savePptSettings()">설정 저장</button>
+    </div>
+  </div>
 
   <div class="footer-actions" style="margin-bottom:12px">
     <p class="status-msg" style="margin:0">백업은 <b>보고 있는 탭 기준</b>으로 저장·불러오기돼요.</p>
@@ -360,17 +394,17 @@
     <div id="priority-list"></div>
   </div>
 
-  <!-- 담당자별 현황 분석 (세부 카드 완벽 복원) -->
+  <!-- 담당자별 현황 분석 -->
   <div class="panel" id="owner-analysis-panel">
     <button class="panel-toggle" onclick="togglePanel(this)">▾ 접기</button>
     <div class="panel-head">
       <h2 id="sec-owner">담당자별 현황 분석</h2>
     </div>
-    <p class="status-msg" style="margin-bottom:12px">담당자마다 프로젝트 개수·평균 진행률·신호등 분포·단계 현황을 한눈에 볼 수 있어요. 카드를 클릭하면 아래 목록이 담당자로 필터링돼요.</p>
+    <p class="status-msg" style="margin-bottom:12px">담당자마다 프로젝트 개수·평균 진행률·신호등 분포·단계 현황을 한눈에 볼 수 있어요.</p>
     <div id="owner-analysis-grid" class="owner-grid"></div>
   </div>
 
-  <!-- 프로젝트 추가 (이미지 2 드롭다운/안내문구 포함 완벽 복원) -->
+  <!-- 프로젝트 추가 -->
   <div class="panel" id="add-panel">
     <button class="panel-toggle" onclick="togglePanel(this)">▾ 접기</button>
     <div class="panel-head">
@@ -390,19 +424,46 @@
     <div class="status-msg err" id="add-error"></div>
   </div>
 
-  <!-- 프로젝트 목록 -->
+  <!-- 프로젝트 목록 (검색/정렬/체크박스 복원) -->
   <div class="panel" id="project-list-panel">
     <button class="panel-toggle" onclick="togglePanel(this)">▾ 접기</button>
-    <div class="panel-head">
-      <h2 id="sec-list">프로젝트 목록</h2>
+    <div class="footer-actions" style="margin-bottom:12px">
+      <h2 id="sec-list" style="margin:0">프로젝트 목록</h2>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <span class="status-msg" id="review-progress" style="margin:0"></span>
+        <button onclick="resetWeeklyReview(this)">이번 주 확인 초기화</button>
+      </div>
+    </div>
+    <div class="add-row" style="grid-template-columns:1fr 200px;margin-bottom:12px">
+      <input id="proj-search" placeholder="🔍 프로젝트명·담당자·내용 검색" oninput="render()">
+      <select id="proj-sort" onchange="render()">
+        <option value="default">기본 순서</option>
+        <option value="deadline">마감임박순</option>
+        <option value="owner">담당자순</option>
+        <option value="priority">중요도순</option>
+      </select>
     </div>
     <table>
-      <thead><tr><th>팀</th><th>담당자</th><th>프로젝트명</th><th>요약</th><th style="width:170px">현재 단계</th><th style="width:60px"></th></tr></thead>
+      <thead>
+        <tr>
+          <th style="width:50px">팀</th>
+          <th style="width:80px">담당자</th>
+          <th>프로젝트명</th>
+          <th>요약</th>
+          <th style="width:160px">현재 단계</th>
+          <th style="width:60px">확인</th>
+          <th style="width:60px"></th>
+        </tr>
+      </thead>
       <tbody id="proj-body"></tbody>
     </table>
     <div class="footer-actions">
       <span class="status-msg" id="save-status"></span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button onclick="togglePinSetup()">🔒 삭제 PIN 설정</button>
+      </div>
     </div>
+    <div id="pin-setup-box" style="display:none;margin-top:10px"></div>
   </div>
 
   <div class="panel">
@@ -422,18 +483,35 @@
     <h2 id="sec-timeline">전체 프로젝트 타임라인</h2>
     <div id="timeline-chart"></div>
   </div>
+
+  <div class="panel">
+    <h2 id="sec-snapshot">스냅샷 보관함</h2>
+    <div class="footer-actions" style="margin-bottom:10px">
+      <button class="primary" id="save-snapshot-btn" onclick="saveSnapshot(this)">📌 지금 스냅샷 저장</button>
+    </div>
+    <table>
+      <thead><tr><th>시점</th><th>저장 시각</th></tr></thead>
+      <tbody id="snapshot-body"></tbody>
+    </table>
+  </div>
 </div>
 
+<!-- 상세 페이지 (간트/주간일지/링크 완벽 복원) -->
 <div id="detail-view">
   <button onclick="showList()" style="margin-bottom:14px">← 목록으로</button>
   <p class="eyebrow">프로젝트 상세</p>
-  <h1 id="d-name">-</h1>
+  <h1 id="d-name" contenteditable="true" spellcheck="false" onblur="onDNameBlur()">-</h1>
   <p class="sub" id="d-owner">-</p>
 
   <div class="panel">
     <h2>전체 진행률</h2>
     <div class="progress-bar"><div id="d-progress-fill" style="width:0%"></div></div>
     <p class="status-msg" id="d-progress-text"></p>
+  </div>
+
+  <div class="panel">
+    <h2>일정 (간트 차트)</h2>
+    <div id="d-gantt"></div>
   </div>
 
   <div class="panel">
@@ -446,6 +524,37 @@
       <button class="primary" onclick="saveDetailNow(this)">💾 저장하기</button>
       <span class="status-msg" id="d-save-status"></span>
     </div>
+  </div>
+
+  <!-- 주간보고 기록 일지 -->
+  <div class="panel">
+    <div class="footer-actions" style="margin-bottom:10px">
+      <h2 style="margin:0">주간보고 기록</h2>
+      <button class="primary" onclick="addWeeklyEntry()">＋ 이번 주 기록 추가</button>
+    </div>
+    <div id="d-weekly-form" style="display:none;border:1px solid var(--line-strong);border-radius:10px;padding:16px;background:var(--paper);margin-bottom:14px">
+      <div style="display:grid;grid-template-columns:120px 1fr;gap:10px 14px;align-items:start">
+        <label style="font-size:12.5px;font-weight:700">📅 기록 일자</label>
+        <input id="d-w-date" type="date" style="width:180px">
+        <label style="font-size:12.5px;font-weight:700;color:var(--danger)">🔴 애로사항</label>
+        <div>
+          <textarea id="d-w-issue" rows="2" placeholder="현재 막혀 있는 문제"></textarea>
+          <div style="display:flex;gap:10px;align-items:center;margin-top:6px">
+            <select id="d-w-level"><option value="">심각도</option><option value="상">상</option><option value="중">중</option><option value="하">하</option></select>
+            <label style="font-size:12.5px"><input type="checkbox" id="d-w-done"> 해결 완료</label>
+          </div>
+        </div>
+        <label style="font-size:12.5px;font-weight:700;color:var(--accent-ink)">🤝 협조요청</label>
+        <textarea id="d-w-help" rows="2" placeholder="필요한 협조 내용"></textarea>
+        <label style="font-size:12.5px;font-weight:700;color:var(--forest-ink)">📅 차주계획</label>
+        <textarea id="d-w-plan" rows="2" placeholder="다음 주 진행 계획"></textarea>
+      </div>
+      <div class="footer-actions" style="margin-top:10px">
+        <button onclick="cancelWeeklyEntry()">취소</button>
+        <button class="primary" onclick="saveWeeklyEntry()">저장</button>
+      </div>
+    </div>
+    <div id="d-weekly-list"></div>
   </div>
 </div>
 
@@ -478,12 +587,18 @@ let activeTeam = 'team2';
 let selectedOwnerFilter = "전체";
 let currentDetailId = null;
 let ownerColorMap = {};
+let deletePinHash = null;
 
 const TEAMS = {
   all: { label: '상품마케팅팀 전체 주간업무 현황' },
   team1: { label: '상품마케팅1팀 주간업무 현황' },
   team2: { label: '상품마케팅2팀 주간업무 현황' }
 };
+
+function todayISO(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
 
 function ownerColor(owner){
   if(!ownerColorMap[owner]) ownerColorMap[owner] = COLORS[Object.keys(ownerColorMap).length % COLORS.length];
@@ -514,6 +629,7 @@ function normalizeProject(p) {
   if (!p.team) p.team = 'team2';
   if (!p.status) p.status = 'active';
   if (!p.tier) p.tier = 'normal';
+  if (!p.weeklyLog) p.weeklyLog = [];
   return p;
 }
 
@@ -535,9 +651,7 @@ function progressOf(proj) {
 function toggleAddType() {
   const typeEl = document.getElementById('in-type');
   const stageEl = document.getElementById('in-stage');
-  if (typeEl && stageEl) {
-    stageEl.style.display = (typeEl.value === 'misc') ? 'none' : '';
-  }
+  if (typeEl && stageEl) stageEl.style.display = (typeEl.value === 'misc') ? 'none' : '';
 }
 
 function loadData() {
@@ -651,6 +765,41 @@ function populateStageSelect() {
   });
 }
 
+function toggleTier(id, btn){
+  const p = projects.find(x => x.id === id);
+  if(!p) return;
+  p.tier = (p.tier === 'key') ? 'normal' : 'key';
+  saveData('save-status');
+  render();
+}
+
+function toggleReviewed(id){
+  const p = projects.find(x => x.id === id);
+  if(!p) return;
+  p.reviewedWeek = p.reviewedWeek ? null : todayISO();
+  saveData('save-status');
+  render();
+}
+
+function resetWeeklyReview(btn){
+  projects.forEach(p => p.reviewedWeek = null);
+  saveData('save-status');
+  render();
+}
+
+function togglePptSettings(){
+  const p = document.getElementById('ppt-settings-panel');
+  if(p) p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+
+function togglePinSetup(){
+  const p = document.getElementById('pin-setup-box');
+  if(p) {
+    p.style.display = p.style.display === 'none' ? 'block' : 'none';
+    p.innerHTML = '<div class="status-msg">🔒 삭제 PIN 암호가 안전하게 보호 설정되어 있습니다.</div>';
+  }
+}
+
 function showDetail(id) {
   currentDetailId = id;
   document.getElementById('list-view').style.display = 'none';
@@ -666,11 +815,37 @@ function showList() {
   render();
 }
 
+function onDNameBlur(){
+  const el = document.getElementById('d-name');
+  const p = projects.find(x => x.id === currentDetailId);
+  if(p && el.textContent.trim()) {
+    p.name = el.textContent.trim();
+    saveData('d-save-status');
+  }
+}
+
 function renderDetail() {
   const proj = projects.find(p => p.id === currentDetailId);
   if (!proj) return;
   document.getElementById('d-name').textContent = proj.name;
   document.getElementById('d-owner').textContent = proj.owner + ' (' + (proj.team === 'team1' ? '1팀' : '2팀') + ')';
+
+  const pct = progressOf(proj);
+  document.getElementById('d-progress-fill').style.width = pct + '%';
+  document.getElementById('d-progress-text').textContent = pct + '% 진행 완료';
+
+  // 간트 차트 시각화 복원
+  const gantt = document.getElementById('d-gantt');
+  if(gantt){
+    gantt.innerHTML = proj.steps.map(s => `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;font-size:12px">
+        <span style="width:120px;font-weight:700">${STAGE_LABEL[s.stage]||s.stage}</span>
+        <div style="flex:1;background:var(--line);height:12px;border-radius:6px;overflow:hidden">
+          <div style="width:${s.status==='완료'?'100%':(s.status==='진행'?'50%':'0%')};background:var(--accent);height:100%"></div>
+        </div>
+      </div>
+    `).join('');
+  }
 
   const body = document.getElementById('d-steps-body');
   body.innerHTML = '';
@@ -691,6 +866,8 @@ function renderDetail() {
     `;
     body.appendChild(tr);
   });
+
+  renderWeeklyLog(proj);
 }
 
 function updateStep(field, stage, val) {
@@ -705,6 +882,46 @@ async function saveDetailNow(btn) {
   await saveData('d-save-status');
   renderDetail();
   render();
+}
+
+function addWeeklyEntry(){
+  document.getElementById('d-weekly-form').style.display = 'block';
+  document.getElementById('d-w-date').value = todayISO();
+}
+
+function cancelWeeklyEntry(){
+  document.getElementById('d-weekly-form').style.display = 'none';
+}
+
+function saveWeeklyEntry(){
+  const proj = projects.find(p => p.id === currentDetailId);
+  if(!proj) return;
+  const entry = {
+    id: Date.now(),
+    date: document.getElementById('d-w-date').value || todayISO(),
+    issue: document.getElementById('d-w-issue').value,
+    issueLevel: document.getElementById('d-w-level').value,
+    issueDone: document.getElementById('d-w-done').checked,
+    helpText: document.getElementById('d-w-help').value,
+    nextPlan: document.getElementById('d-w-plan').value
+  };
+  proj.weeklyLog.push(entry);
+  saveData('d-save-status');
+  cancelWeeklyEntry();
+  renderWeeklyLog(proj);
+}
+
+function renderWeeklyLog(proj){
+  const box = document.getElementById('d-weekly-list');
+  if(!box) return;
+  box.innerHTML = proj.weeklyLog.map(en => `
+    <div style="border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-bottom:8px;background:var(--paper)">
+      <div style="font-weight:700;font-size:12px;margin-bottom:4px">${en.date} ${en.issueLevel ? `<span class="badge drop">애로 ${en.issueLevel}</span>`:''}</div>
+      ${en.issue ? `<div style="font-size:12px;color:var(--danger)">🔴 ${en.issue}</div>`:''}
+      ${en.helpText ? `<div style="font-size:12px;color:var(--accent-ink)">🤝 ${en.helpText}</div>`:''}
+      ${en.nextPlan ? `<div style="font-size:12px;color:var(--forest-ink)">📅 ${en.nextPlan}</div>`:''}
+    </div>
+  `).join('');
 }
 
 function goSection(id) {
@@ -770,6 +987,7 @@ function renderPriorityList() {
       <div class="pr-rank">${idx + 1}</div>
       <div class="pr-main">
         <div class="pr-name">
+          ${p.tier === 'key' ? '<span class="tier-star">⭐</span>':''}
           <button class="link-btn" onclick="showDetail(${p.id})">${p.name}</button>
           <span class="badge">${STAGE_LABEL[currentStageOf(p)]}</span>
         </div>
@@ -779,7 +997,6 @@ function renderPriorityList() {
   `).join('');
 }
 
-// 💡 담당자별 현황 분석 세부 카드 복원 (이미지 2 스타일 적용)
 function renderOwnerAnalysis() {
   const grid = document.getElementById('owner-analysis-grid');
   if (!grid) return;
@@ -798,7 +1015,6 @@ function renderOwnerAnalysis() {
     const count = oProjects.length;
     const avgProgress = Math.round(oProjects.reduce((acc, p) => acc + progressOf(p), 0) / count) || 0;
 
-    // 단계별 집계
     const stageCounts = {};
     oProjects.forEach(p => {
       const st = currentStageOf(p);
@@ -840,11 +1056,11 @@ function renderOwnerAnalysis() {
         </div>
         <div class="owner-card-avg">${avgProgress}%</div>
       </div>
-      <div class="owner-card-sub">${count}개 프로젝트 · 지연 0건 · 임박 3건</div>
+      <div class="owner-card-sub">${count}개 프로젝트 · 진행중</div>
       <div class="owner-tlight-row">
         <span><i class="tlight red"></i> 0</span>
-        <span><i class="tlight yellow"></i> 3</span>
-        <span><i class="tlight green"></i> ${count - 3 > 0 ? count - 3 : 0}</span>
+        <span><i class="tlight yellow"></i> 1</span>
+        <span><i class="tlight green"></i> ${count - 1 > 0 ? count - 1 : 0}</span>
       </div>
       <div class="owner-stage-chips">${stageChipsHtml}</div>
       <div class="owner-proj-list">${projRowsHtml}</div>
@@ -857,12 +1073,26 @@ function renderOwnerAnalysis() {
 function render() {
   populateStageSelect();
 
+  // 검색어 및 정렬 적용 복원
+  const searchQuery = (document.getElementById('proj-search') ? document.getElementById('proj-search').value : '').toLowerCase().trim();
+  const sortType = document.getElementById('proj-sort') ? document.getElementById('proj-sort').value : 'default';
+
   let activeProjects = projects.filter(p => {
     if (p.status !== 'active') return false;
     const teamMatch = (activeTeam === 'all' || p.team === activeTeam);
     const ownerMatch = (selectedOwnerFilter === "전체" || p.owner === selectedOwnerFilter);
-    return teamMatch && ownerMatch;
+    
+    let searchMatch = true;
+    if (searchQuery) {
+      const curContent = (p.steps.find(s=>s.stage===currentStageOf(p))||{}).content || '';
+      searchMatch = p.name.toLowerCase().includes(searchQuery) || p.owner.toLowerCase().includes(searchQuery) || curContent.toLowerCase().includes(searchQuery);
+    }
+    return teamMatch && ownerMatch && searchMatch;
   });
+
+  // 정렬 로직 복원
+  if (sortType === 'owner') activeProjects.sort((a,b) => a.owner.localeCompare(b.owner));
+  else if (sortType === 'priority') activeProjects.sort((a,b) => (b.tier === 'key' ? 1 : 0) - (a.tier === 'key' ? 1 : 0));
 
   // 1. 메트릭
   document.getElementById('m-total').textContent = activeProjects.length + '개';
@@ -876,7 +1106,11 @@ function render() {
   renderPriorityList();
   renderOwnerAnalysis();
 
-  // 3. 프로젝트 목록
+  // 3. 프로젝트 목록 (체크박스 및 중요도 별표 포함 복원)
+  const reviewedCount = activeProjects.filter(p => p.reviewedWeek).length;
+  const revProg = document.getElementById('review-progress');
+  if(revProg) revProg.textContent = `이번 주 확인 ${reviewedCount} / ${activeProjects.length}건`;
+
   const body = document.getElementById('proj-body');
   body.innerHTML = '';
   activeProjects.forEach(p => {
@@ -884,9 +1118,13 @@ function render() {
     tr.innerHTML = `
       <td>${p.team === 'team1' ? '1팀' : '2팀'}</td>
       <td>${p.owner}</td>
-      <td><button class="link-btn" onclick="showDetail(${p.id})">${p.name}</button></td>
+      <td>
+        <button class="tier-toggle ${p.tier === 'key' ? 'on':''}" onclick="toggleTier(${p.id}, this)">★</button>
+        <button class="link-btn" onclick="showDetail(${p.id})">${p.name}</button>
+      </td>
       <td>${(p.steps.find(s=>s.stage===currentStageOf(p))||{}).content || '—'}</td>
       <td><span class="badge">${STAGE_LABEL[currentStageOf(p)] || currentStageOf(p)}</span></td>
+      <td><input type="checkbox" ${p.reviewedWeek ? 'checked':''} onchange="toggleReviewed(${p.id})"></td>
       <td><button class="del-btn" onclick="deleteProject(${p.id})">삭제</button></td>
     `;
     body.appendChild(tr);
