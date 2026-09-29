@@ -137,6 +137,12 @@
   .badge.진행::before{background:var(--amber)}
   .badge.예정{background:var(--slate-soft);color:var(--slate-ink)}
   .badge.예정::before{background:var(--slate)}
+  .badge.done{background:var(--forest-soft);color:var(--forest-ink)}
+  .badge.done::before{background:var(--forest)}
+  .badge.hold{background:var(--amber-soft);color:var(--amber-ink)}
+  .badge.hold::before{background:var(--amber)}
+  .badge.drop{background:var(--danger-soft);color:var(--danger)}
+  .badge.drop::before{background:var(--danger)}
 
   .team-tabs{
     display:flex;gap:8px;flex-wrap:wrap;margin-bottom:var(--sp-4);
@@ -172,8 +178,74 @@
     color:#fff;box-shadow:none;transition:background .12s, transform .12s;
   }
   .sec-nav button:hover{background:rgba(255,255,255,.30);color:#fff;transform:translateY(-1px)}
+
+  .scroll-fab{
+    position:fixed;right:20px;bottom:20px;z-index:60;display:flex;flex-direction:column;gap:6px;
+    opacity:1;pointer-events:auto;
+  }
+  .scroll-fab button{
+    width:38px;height:38px;padding:0;border-radius:50%;font-size:13px;font-weight:700;
+    background:var(--card);border:1px solid var(--line-strong);color:var(--ink-soft);
+    box-shadow:var(--sh-2);
+  }
+  .scroll-fab button:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+
+  h2[id^="sec-"]{scroll-margin-top:80px}
+
+  .pf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:var(--sp-3);margin-bottom:var(--sp-4)}
+  .pf-card{
+    position:relative;background:var(--paper);border:1px solid var(--line);border-radius:var(--r-md);
+    padding:var(--sp-3) var(--sp-4);overflow:hidden;
+  }
+  .pf-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--slate)}
+  .pf-card.active::before{background:var(--accent)}
+  .pf-card.done::before{background:var(--forest)}
+  .pf-card.hold::before{background:var(--amber)}
+  .pf-card.drop::before{background:var(--danger)}
+  .pf-label{font-size:11px;color:var(--ink-muted);font-weight:600;letter-spacing:.04em;margin-bottom:var(--sp-1)}
+  .pf-value{font-family:var(--mono);font-size:24px;font-weight:700;line-height:1;color:var(--ink)}
+
+  .owner-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:var(--sp-4)}
+  .owner-card{
+    background:var(--paper);border:1px solid var(--line);border-radius:var(--r-md);padding:var(--sp-4) var(--sp-5);
+    box-shadow:var(--sh-1);
+  }
+  .owner-card-name{font-size:16px;font-weight:700;color:var(--ink);margin-bottom:8px}
+
+  #pipeline-rows{position:relative;margin-left:6px;padding-left:26px}
+  #pipeline-rows::before{
+    content:'';position:absolute;left:5px;top:10px;bottom:10px;width:2px;
+    background:linear-gradient(180deg,var(--accent),var(--line-strong) 70%,transparent);
+  }
+  .stage-row{
+    display:flex;gap:var(--sp-3);padding:11px 0;align-items:flex-start;position:relative;
+    border-radius:var(--r-sm);
+  }
+  .stage-marker{
+    position:absolute;left:-26px;top:13px;width:11px;height:11px;background:var(--accent);
+    border-radius:50%;
+  }
+  .stage-label{
+    width:150px;flex-shrink:0;font-size:12px;font-weight:700;color:var(--ink-soft);padding-top:3px;
+  }
+  .chips{display:flex;flex-wrap:wrap;gap:var(--sp-2);flex:1}
+  .chip{
+    display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border-radius:var(--r-pill);
+    font-size:12px;border:1px solid var(--line-strong);background:var(--card);cursor:pointer;
+  }
+
+  .progress-bar{height:7px;border-radius:99px;background:var(--line);overflow:hidden;margin:10px 0 6px}
+  .progress-bar > div{height:100%;background:var(--accent);transition:width .2s}
+
+  #detail-view{display:none}
+  #list-view{display:block}
+  .filters{display:flex;gap:var(--sp-2);flex-wrap:wrap;margin-bottom:var(--sp-4)}
+  .filter-btn{border-radius:var(--r-pill);padding:6px 15px;font-size:12.5px;box-shadow:none}
+  .filter-btn.active{background:var(--accent);color:#fff;font-weight:700}
 </style>
 </head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 <body>
 
 <div id="list-view">
@@ -183,7 +255,9 @@
       <h1 id="page-title">상품마케팅2팀 주간업무 현황</h1>
       <p class="sub" style="margin-bottom:0">STEP 1~6 / NPDC GATE 1~3 기준으로 프로젝트가 어느 단계에 있는지 매주 갱신해서 보는 화면입니다. 프로젝트명을 클릭하면 일정 상세를 볼 수 있어요.</p>
     </div>
+    <button class="primary" onclick="exportAllToExcel()" style="flex-shrink:0">⬇ 팀 전체 엑셀 다운로드</button>
     <button onclick="manualRefresh()" style="flex-shrink:0">🔄 새로고침</button>
+    <button class="primary" onclick="generateReportPPT(this)" style="flex-shrink:0">📊 보고서 PPT 다운로드</button>
   </div>
   <p class="status-msg" id="live-status" style="margin:0 0 10px"></p>
 
@@ -194,6 +268,19 @@
     <button id="tab-team2" data-team="team2" class="active" onclick="setTeam('team2')">상품마케팅2팀</button>
   </div>
 
+  <nav class="sec-nav" id="sec-nav">
+    <span class="sec-nav-label">바로가기</span>
+    <button onclick="goSection('sec-portfolio')">포트폴리오</button>
+    <button onclick="goSection('sec-priority')">주요 안건</button>
+    <button onclick="goSection('sec-owner')">담당자별</button>
+    <button onclick="goSection('sec-list')">프로젝트 목록</button>
+    <button onclick="goSection('sec-archive')">보관함</button>
+    <button onclick="goSection('sec-pipeline')">단계별</button>
+    <button onclick="goSection('sec-timeline')">타임라인</button>
+    <button onclick="goSection('sec-storage')">저장용량</button>
+    <button onclick="goSection('sec-snapshot')">스냅샷</button>
+  </nav>
+
   <div class="footer-actions" style="margin-bottom:12px">
     <p class="status-msg" style="margin:0">백업은 <b>보고 있는 탭 기준</b>으로 저장·불러오기돼요.</p>
     <div style="display:flex;gap:8px">
@@ -201,6 +288,28 @@
       <button onclick="document.getElementById('backup-file-input').click()">📥 백업 불러오기</button>
       <input type="file" id="backup-file-input" accept=".json,application/json" style="display:none" onchange="importBackup(event)">
     </div>
+  </div>
+
+  <div class="metrics">
+    <div class="metric"><p class="label">진행 중</p><p class="value" id="m-total">-</p></div>
+    <div class="metric"><p class="label">평균 진행률</p><p class="value" id="m-avg">-</p></div>
+    <div class="metric"><p class="label">초기 단계 (STEP1~2)</p><p class="value" id="m-early">-</p></div>
+    <div class="metric"><p class="label">막바지 (STEP6+)</p><p class="value" id="m-late">-</p></div>
+  </div>
+
+  <div class="panel">
+    <h2 id="sec-portfolio">전체 포트폴리오 현황</h2>
+    <div id="portfolio-summary"></div>
+  </div>
+
+  <div class="panel" id="priority-panel">
+    <h2 id="sec-priority">금주 주요 안건</h2>
+    <div id="priority-list"></div>
+  </div>
+
+  <div class="panel" id="owner-analysis-panel">
+    <h2 id="sec-owner">담당자별 현황 분석</h2>
+    <div id="owner-analysis-grid" class="owner-grid"></div>
   </div>
 
   <div class="panel" id="add-panel">
@@ -215,7 +324,7 @@
   </div>
 
   <div class="panel" id="project-list-panel">
-    <h2>프로젝트 목록</h2>
+    <h2 id="sec-list">프로젝트 목록</h2>
     <table>
       <thead><tr><th>팀</th><th>담당자</th><th>프로젝트명</th><th>요약</th><th style="width:170px">현재 단계</th><th style="width:60px"></th></tr></thead>
       <tbody id="proj-body"></tbody>
@@ -224,6 +333,67 @@
       <span class="status-msg" id="save-status"></span>
     </div>
   </div>
+
+  <div class="panel">
+    <h2 id="sec-archive">프로젝트 보관함 (완료 · 홀딩 · 드랍)</h2>
+    <table>
+      <thead><tr><th>담당자</th><th>프로젝트명</th><th style="width:90px">상태</th><th style="width:130px">이관일</th></tr></thead>
+      <tbody id="archive-body"></tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2 id="sec-pipeline">단계별 파이프라인</h2>
+    <div id="pipeline-rows"></div>
+  </div>
+
+  <div class="panel">
+    <h2 id="sec-timeline">전체 프로젝트 타임라인</h2>
+    <div id="timeline-chart"></div>
+  </div>
+
+  <div class="panel">
+    <h2 id="sec-storage">저장 용량 현황</h2>
+    <div id="storage-usage"></div>
+  </div>
+
+  <div class="panel">
+    <h2 id="sec-snapshot">스냅샷 보관함</h2>
+    <table>
+      <thead><tr><th>시점</th><th>저장 시각</th></tr></thead>
+      <tbody id="snapshot-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="detail-view">
+  <button onclick="showList()" style="margin-bottom:14px">← 목록으로</button>
+  <p class="eyebrow">프로젝트 상세</p>
+  <h1 id="d-name">-</h1>
+  <p class="sub" id="d-owner">-</p>
+
+  <div class="panel">
+    <h2>전체 진행률</h2>
+    <div class="progress-bar"><div id="d-progress-fill" style="width:0%"></div></div>
+    <p class="status-msg" id="d-progress-text"></p>
+  </div>
+
+  <div class="panel">
+    <h2>단계별 상세</h2>
+    <table>
+      <thead><tr><th style="width:140px">단계</th><th>내용</th><th style="width:90px">상태</th><th style="width:130px">시작일</th><th style="width:130px">마감일</th></tr></thead>
+      <tbody id="d-steps-body"></tbody>
+    </table>
+    <div class="footer-actions">
+      <button class="primary" onclick="saveDetailNow(this)">💾 저장하기</button>
+      <span class="status-msg" id="d-save-status"></span>
+    </div>
+  </div>
+</div>
+
+<div class="scroll-fab">
+  <button onclick="scrollToTop()">▲</button>
+  <button onclick="scrollToBottom()">▼</button>
 </div>
 
 <script>
@@ -244,7 +414,8 @@ const STAGE_LABEL = {
 };
 
 let projects = [];
-let activeTeam = 'team2'; // 기본 선택: 상품마케팅2팀
+let activeTeam = 'team2';
+let currentDetailId = null;
 
 const TEAMS = {
   all: { label: '상품마케팅팀 전체 주간업무 현황' },
@@ -252,32 +423,20 @@ const TEAMS = {
   team2: { label: '상품마케팅2팀 주간업무 현황' }
 };
 
-// 💡 탭 전환 함수 (수정 보완됨)
 function setTeam(team) {
   activeTeam = team;
-
-  // 1. 탭 버튼 디자인(active 클래스) 업데이트
   document.querySelectorAll('.team-tabs button').forEach(btn => {
-    if (btn.getAttribute('data-team') === team) {
-      btn.classList.add('active');
-    } else {
-      btn.classList.remove('active');
-    }
+    btn.classList.toggle('active', btn.getAttribute('data-team') === team);
   });
-
-  // 2. 상단 제목 업데이트
   const pageTitle = document.getElementById('page-title');
-  if (pageTitle && TEAMS[team]) {
-    pageTitle.textContent = TEAMS[team].label;
-  }
-
-  // 3. 목록 다시 그리기
+  if (pageTitle && TEAMS[team]) pageTitle.textContent = TEAMS[team].label;
   render();
 }
 
 function normalizeProject(p) {
-  if (!p.steps) p.steps = STAGES.map(s => ({stage:s, status:"예정", content:""}));
+  if (!p.steps) p.steps = STAGES.map(s => ({stage:s, status:"예정", content:"", start:"", end:""}));
   if (!p.team) p.team = 'team2';
+  if (!p.status) p.status = 'active';
   return p;
 }
 
@@ -289,7 +448,6 @@ function currentStageOf(proj) {
   return STAGES[STAGES.length - 1];
 }
 
-// Data Load
 function loadData() {
   database.ref('projects_v2').on('value', (snapshot) => {
     const val = snapshot.val();
@@ -317,7 +475,6 @@ async function saveData(statusElId) {
   }
 }
 
-// 백업 업로드 시 team 보정 처리
 function importBackup(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -361,16 +518,15 @@ function addProject() {
   const stage = document.getElementById('in-stage').value;
   if (!owner || !name) return;
 
-  const steps = STAGES.map(s => ({stage: s, status: "예정", content: ""}));
+  const steps = STAGES.map(s => ({stage: s, status: "예정", content: "", start: "", end: ""}));
   const idx = STAGES.indexOf(stage);
   steps.forEach((s, i) => { if (i < idx) s.status = "완료"; });
 
-  // 현재 선택된 탭에 맞춰 팀 부여 (전체 탭일 경우 기본 team2)
   const projTeam = (activeTeam === 'all') ? 'team2' : activeTeam;
 
   projects.push({
     id: Date.now() + Math.random(),
-    owner, name, steps, team: projTeam
+    owner, name, steps, team: projTeam, status: 'active'
   });
 
   document.getElementById('in-owner').value = '';
@@ -395,47 +551,141 @@ function populateStageSelect() {
   });
 }
 
-// 💡 데이터 렌더링 (선택된 팀 필터링 반영)
+function showDetail(id) {
+  currentDetailId = id;
+  document.getElementById('list-view').style.display = 'none';
+  document.getElementById('detail-view').style.display = 'block';
+  renderDetail();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function showList() {
+  currentDetailId = null;
+  document.getElementById('detail-view').style.display = 'none';
+  document.getElementById('list-view').style.display = 'block';
+  render();
+}
+
+function renderDetail() {
+  const proj = projects.find(p => p.id === currentDetailId);
+  if (!proj) return;
+  document.getElementById('d-name').textContent = proj.name;
+  document.getElementById('d-owner').textContent = proj.owner + ' (' + (proj.team === 'team1' ? '1팀' : '2팀') + ')';
+
+  const body = document.getElementById('d-steps-body');
+  body.innerHTML = '';
+  proj.steps.forEach(step => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${STAGE_LABEL[step.stage]}</td>
+      <td><textarea onchange="updateStep('content', '${step.stage}', this.value)" style="width:100%">${step.content||''}</textarea></td>
+      <td>
+        <select onchange="updateStep('status', '${step.stage}', this.value)">
+          <option value="예정" ${step.status==='예정'?'selected':''}>예정</option>
+          <option value="진행" ${step.status==='진행'?'selected':''}>진행</option>
+          <option value="완료" ${step.status==='완료'?'selected':''}>완료</option>
+        </select>
+      </td>
+      <td><input type="date" value="${step.start||''}" onchange="updateStep('start', '${step.stage}', this.value)"></td>
+      <td><input type="date" value="${step.end||''}" onchange="updateStep('end', '${step.stage}', this.value)"></td>
+    `;
+    body.appendChild(tr);
+  });
+}
+
+function updateStep(field, stage, val) {
+  const proj = projects.find(p => p.id === currentDetailId);
+  if (!proj) return;
+  const step = proj.steps.find(s => s.stage === stage);
+  if (step) step[field] = val;
+  saveData('d-save-status');
+}
+
+async function saveDetailNow(btn) {
+  await saveData('d-save-status');
+  renderDetail();
+  render();
+}
+
+function goSection(id) {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({behavior:'smooth'});
+}
+
+function scrollToTop() { window.scrollTo({top:0, behavior:'smooth'}); }
+function scrollToBottom() { window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'}); }
+
 function render() {
   populateStageSelect();
 
-  // 선택된 탭(activeTeam)에 맞춰 데이터 필터링
   let activeProjects = projects.filter(p => {
-    if (activeTeam === 'all') return true;
-    return p.team === activeTeam;
+    if (p.status !== 'active') return false;
+    return activeTeam === 'all' || p.team === activeTeam;
   });
 
+  // 1. 상단 통계
+  document.getElementById('m-total').textContent = activeProjects.length + '건';
+  
+  // 2. 목록 테이블
   const body = document.getElementById('proj-body');
   body.innerHTML = '';
 
   activeProjects.forEach(p => {
     const tr = document.createElement('tr');
-    
-    const tdTeam = document.createElement('td');
-    tdTeam.textContent = p.team === 'team1' ? '1팀' : '2팀';
-
-    const tdOwner = document.createElement('td'); 
-    tdOwner.textContent = p.owner;
-
-    const tdName = document.createElement('td');
-    tdName.textContent = p.name;
-
-    const tdSummary = document.createElement('td');
-    const curStep = p.steps.find(s => s.stage === currentStageOf(p));
-    tdSummary.textContent = (curStep && curStep.content) ? curStep.content : '—';
-
-    const tdStage = document.createElement('td');
-    tdStage.innerHTML = '<span class="badge">' + STAGE_LABEL[currentStageOf(p)] + '</span>';
-
-    const tdDel = document.createElement('td');
-    const delBtn = document.createElement('button');
-    delBtn.className = 'del-btn'; delBtn.textContent = '삭제';
-    delBtn.onclick = () => deleteProject(p.id);
-    tdDel.appendChild(delBtn);
-
-    tr.append(tdTeam, tdOwner, tdName, tdSummary, tdStage, tdDel);
+    tr.innerHTML = `
+      <td>${p.team === 'team1' ? '1팀' : '2팀'}</td>
+      <td>${p.owner}</td>
+      <td><button class="link-btn" onclick="showDetail(${p.id})">${p.name}</button></td>
+      <td>${(p.steps.find(s=>s.stage===currentStageOf(p))||{}).content || '—'}</td>
+      <td><span class="badge">${STAGE_LABEL[currentStageOf(p)]}</span></td>
+      <td><button class="del-btn" onclick="deleteProject(${p.id})">삭제</button></td>
+    `;
     body.appendChild(tr);
   });
+
+  // 3. 보관함
+  const archiveBody = document.getElementById('archive-body');
+  if (archiveBody) {
+    archiveBody.innerHTML = '';
+    projects.filter(p => p.status !== 'active' && (activeTeam === 'all' || p.team === activeTeam)).forEach(p => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${p.owner}</td><td>${p.name}</td><td><span class="badge ${p.status}">${p.status}</span></td><td>-</td>`;
+      archiveBody.appendChild(tr);
+    });
+  }
+
+  // 4. 담당자별 현황
+  const ownerGrid = document.getElementById('owner-analysis-grid');
+  if (ownerGrid) {
+    ownerGrid.innerHTML = '';
+    const owners = [...new Set(activeProjects.map(p => p.owner))];
+    owners.forEach(owner => {
+      const count = activeProjects.filter(p => p.owner === owner).length;
+      const card = document.createElement('div');
+      card.className = 'owner-card';
+      card.innerHTML = `<div class="owner-card-name">${owner}</div><div>진행중 프로젝트: <b>${count}건</b></div>`;
+      ownerGrid.appendChild(card);
+    });
+  }
+
+  // 5. 단계별 파이프라인
+  const pipeRows = document.getElementById('pipeline-rows');
+  if (pipeRows) {
+    pipeRows.innerHTML = '';
+    STAGES.forEach(stage => {
+      const stageProjs = activeProjects.filter(p => currentStageOf(p) === stage);
+      const row = document.createElement('div');
+      row.className = 'stage-row';
+      row.innerHTML = `
+        <div class="stage-marker"></div>
+        <div class="stage-label">${STAGE_LABEL[stage]} (${stageProjs.length})</div>
+        <div class="chips">
+          ${stageProjs.map(p => `<span class="chip" onclick="showDetail(${p.id})"><b>${p.owner}</b>:${p.name}</span>`).join('') || '<span style="color:#999;font-size:12px;">항목 없음</span>'}
+        </div>
+      `;
+      pipeRows.appendChild(row);
+    });
+  }
 }
 
 // 최초 로드 실행
