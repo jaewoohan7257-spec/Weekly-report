@@ -886,7 +886,7 @@
       <h2 id="sec-storage" style="margin:0">저장 용량 현황<span class="st-badge" id="storage-badge"></span></h2>
       <button onclick="refreshStorageUsage(this)">🔄 다시 계산</button>
     </div>
-    <p class="status-msg" style="margin-bottom:14px">데이터는 Firebase 저장소에 보관돼요. 아래 게이지는 여유 있게 관리하기 위한 기준치(<b>전체 20MB</b>, <b>항목 하나당 5MB</b>)예요. 기준에 가까워지면 오래된 스냅샷을 백업 후 정리해주세요.</p>
+    <p class="status-msg" style="margin-bottom:14px">데이터는 Firebase Realtime Database(무료 Spark 요금제)에 보관돼요. 저장은 <b>전체 1GB</b>, 항목 하나당 <b>10MB</b>까지 가능하고, 이와 별도로 <b>월 다운로드 10GB</b>·<b>동시 접속 100명</b> 한도가 있어요. 다운로드 사용량은 Firebase 콘솔 › Realtime Database › 사용량 탭에서 확인할 수 있어요. 파일은 여기에 넣지 말고 드라이브 링크로 첨부해주세요.</p>
     <div id="storage-usage"></div>
   </div>
 
@@ -1063,11 +1063,24 @@
 const FIREBASE_DB_URL = "https://project-dashboard-2431e-default-rtdb.asia-southeast1.firebasedatabase.app";
 const FIREBASE_ROOT   = "dashboard";   // DB 안에서 이 대시보드 데이터가 들어갈 폴더 이름
 
-firebase.initializeApp({
-  projectId: "project-dashboard-2431e",
-  databaseURL: FIREBASE_DB_URL
-});
-const _fbdb = firebase.database();
+// Firebase 라이브러리를 못 불러온 환경(Claude 미리보기, 인터넷 차단 등)에서도 화면이 멈추지 않도록 한다
+const FIREBASE_OK = (typeof firebase !== "undefined");
+let _fbdb = null;
+if(FIREBASE_OK){
+  firebase.initializeApp({
+    projectId: "project-dashboard-2431e",
+    databaseURL: FIREBASE_DB_URL
+  });
+  _fbdb = firebase.database();
+} else {
+  console.warn("Firebase를 불러오지 못해 이 브라우저에만 임시 저장합니다 (공유 안 됨).");
+  window.addEventListener("DOMContentLoaded", ()=>{
+    const bar = document.createElement("div");
+    bar.textContent = "⚠ Firebase에 연결되지 않았어요. 지금 입력한 내용은 팀원과 공유되지 않아요. (GitHub Pages 주소로 열어주세요)";
+    bar.style.cssText = "position:sticky;top:0;z-index:9999;background:#f87171;color:#fff;padding:8px 14px;font-size:13px;text-align:center";
+    document.body.prepend(bar);
+  });
+}
 
 // 기존 코드가 쓰던 window.storage.get/set 을 그대로 흉내 낸다.
 //  - 공유 데이터(shared=true)  → Firebase Realtime Database
@@ -1098,19 +1111,19 @@ const _fbdb = firebase.database();
 
   window.storage = {
     async get(key, shared){
-      if(!shared) return local.get(key);
+      if(!shared || !FIREBASE_OK) return local.get(key);
       await watch(key);
       const v = cache[key];
       return (v === null || v === undefined) ? null : {key, value: v, shared: true};
     },
     async set(key, value, shared){
-      if(!shared) return local.set(key, value);
+      if(!shared || !FIREBASE_OK) return local.set(key, value);
       await ref(key).set(value);
       cache[key] = value;
       return {key, value, shared: true};
     },
     async delete(key, shared){
-      if(!shared) return local.del(key);
+      if(!shared || !FIREBASE_OK) return local.del(key);
       await ref(key).remove();
       cache[key] = null;
       return {key, deleted: true, shared: true};
@@ -1906,7 +1919,7 @@ function wireWeeklyTextareas(){
 
 // ===== 단계별 첨부 (이미지·파일) =====
 // 프로젝트 데이터에는 메타정보만 저장하고, 실제 파일 내용은 별도 저장소 키에 보관한다.
-// (저장소는 키당 5MB 제한이라, 첨부를 분리해야 고화질/대용량을 담을 수 있음)
+// (파일은 저장하지 않고 링크만 기록한다)
 // ===== 단계별 첨부 (공유 링크) =====
 // 파일 자체는 저장하지 않고, 공유 드라이브 등의 링크만 기록한다.
 
@@ -3302,7 +3315,7 @@ function buildChangeBrief(cg){
 // 최근 두 스냅샷을 비교해 프로젝트별 변경 요약을 만든다 (없으면 null)
 function weeklyChangeMap(){
   if(!snapshots || snapshots.length < 2) return null;
-  const sorted = [...snapshots].sort((a,b)=> a.week < b.week ? -1 : 1);
+  const sorted = [...snapshots].sort(snapCmp);
   const prev = sorted[sorted.length-2];
   const curr = sorted[sorted.length-1];
   const diff = diffSnapshots(scopeByTeam(prev.data || []), scopeByTeam(curr.data || []));
@@ -3926,7 +3939,7 @@ async function downloadStyledSheet(structuredRows, filename, sheetName){
   const a = document.createElement('a');
   a.href = url; a.download = filename;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  setTimeout(()=> URL.revokeObjectURL(url), 1500);
 }
 
 function exportProjectToExcel(){
@@ -3957,9 +3970,27 @@ function exportArchivedToExcel(){
   downloadStyledSheet(rows, teamLabel().split(' ').join('') + '_보관함_' + todayStr() + '.xlsx', '보관함');
 }
 
-function exportBackup(){
+function triggerDownload(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=> URL.revokeObjectURL(url), 1500);
+}
+
+async function exportBackup(){
   // 팀 탭에서는 그 팀 데이터만, 전체 현황에서는 모두 내보낸다
-  const target = (activeTeam === 'all') ? projects : projects.filter(p => p.team === activeTeam);
+  // 저장 안 한 내 변경이 있으면 화면 기준, 없으면 저장소 최신본 기준 (다른 팀원 최신 입력 포함)
+  let source = projects, note = '';
+  if(hasUnsaved()){
+    note = ' (아직 저장 안 한 변경 포함)';
+  } else {
+    try{
+      const res = await window.storage.get('projects_v2', true);
+      if(res && res.value){ source = JSON.parse(res.value); source.forEach(normalizeProject); }
+    }catch(e){ /* 읽기 실패 시 화면 데이터 기준 */ }
+  }
+  const target = (activeTeam === 'all') ? source : source.filter(p => teamOf(p) === activeTeam);
   const blob = new Blob([JSON.stringify(target, null, 1)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -3968,9 +3999,9 @@ function exportBackup(){
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  setTimeout(()=> URL.revokeObjectURL(url), 1500);
   const st = document.getElementById('save-status');
-  if(st) st.textContent = teamLabel() + ' ' + target.length + '건을 백업 파일로 내려받았어요.';
+  if(st) st.textContent = teamLabel() + ' ' + target.length + '건을 백업 파일로 내려받았어요.' + note;
 }
 
 function importBackup(event){
@@ -4005,6 +4036,9 @@ function importBackup(event){
           say('⚠ 불러오지 않았어요. 이 파일은 ' + kind + '이라 전체 현황 탭에서 올리면 다른 팀 데이터가 사라질 수 있어요. 해당 팀 탭으로 이동해서 불러와주세요.');
           return;
         }
+        if(!confirm('전체 현황을 이 파일 내용으로 교체할까요?\n\n현재 ' + latest.length + '건 → 1팀 ' + count.team1 + '건 · 2팀 ' + count.team2 + '건\n팀원 모두의 화면에 바로 반영되고, 파일 이후에 입력된 내용은 사라져요.\n(필요하면 먼저 "백업 저장"을 눌러두세요)')){
+          say('불러오기를 취소했어요.'); return;
+        }
         raw.forEach(p => { p.team = teamOf(p); normalizeProject(p); });
         projects = raw;
         await saveData('save-status', {replaceAll:true});
@@ -4029,6 +4063,9 @@ function importBackup(event){
         return;
       }
       const before = latest.length - kept.length;
+      if(!confirm(TEAMS[myTeam].label + ' 데이터를 이 파일 내용으로 교체할까요?\n\n현재 ' + before + '건 → ' + mine.length + '건 (다른 팀 ' + kept.length + '건은 유지)\n팀원 모두의 화면에 바로 반영되고, 파일 이후에 입력된 내용은 사라져요.\n(필요하면 먼저 "백업 저장"을 눌러두세요)')){
+        say('불러오기를 취소했어요.'); return;
+      }
       mine.forEach(p => { p.team = myTeam; normalizeProject(p); });
       projects = kept.concat(mine);
       await saveData('save-status', {replaceAll:true});
@@ -4057,6 +4094,30 @@ function isoWeekLabel(date){
   return d.getUTCFullYear() + '-W' + String(week).padStart(2, '0');
 }
 
+// 스냅샷 키를 날짜로 환산 (주차 YYYY-Wnn → 그 주 월요일, 일자 YYYY-MM-DD → 그대로)
+function snapKeyDate(k){
+  const m = /^(\d{4})-W(\d{2})$/.exec(k || '');
+  if(m){
+    const y = +m[1], w = +m[2];
+    const jan4 = new Date(Date.UTC(y, 0, 4));
+    const mon = new Date(jan4); mon.setUTCDate(jan4.getUTCDate() - ((jan4.getUTCDay() + 6) % 7) + (w - 1) * 7);
+    return mon.toISOString().slice(0, 10);
+  }
+  return k || '';
+}
+function snapCmp(a, b){
+  const da = snapKeyDate(a.week), db = snapKeyDate(b.week);
+  if(da !== db) return da < db ? -1 : 1;
+  return (a.savedAt || '') < (b.savedAt || '') ? -1 : 1;
+}
+// 다른 팀원이 방금 저장한 스냅샷을 지우지 않도록, 고치기 직전에 최신 목록을 다시 받는다
+async function refreshSnapshots(){
+  try{
+    const res = await window.storage.get(SNAPSHOT_KEY, true);
+    if(res && res.value){ const arr = JSON.parse(res.value); if(Array.isArray(arr)) snapshots = arr; }
+  }catch(e){ /* 실패 시 화면 목록 기준 */ }
+}
+
 async function loadSnapshots(){
   try{
     const res = await window.storage.get(SNAPSHOT_KEY, true);
@@ -4070,7 +4131,7 @@ async function loadSnapshots(){
 
 function computeNewlyOverdue(){
   if(snapshots.length === 0) return [];
-  const latest = [...snapshots].sort((a,b)=> a.week < b.week ? -1 : 1).pop();
+  const latest = [...snapshots].sort(snapCmp).pop();
   const prevOverdueKeys = new Set();
   latest.data.forEach(p=>{
     p.steps.forEach(s=>{
@@ -4121,7 +4182,7 @@ function exportSnapshotsBackup(){
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  setTimeout(()=> URL.revokeObjectURL(url), 1500);
   const el = document.getElementById('snapshot-status');
   if(el) el.textContent = teamLabel() + ' 스냅샷 백업 ' + out.length + '건을 내려받았어요.';
 }
@@ -4135,16 +4196,12 @@ function importSnapshotsBackup(event){
     try{
       const parsed = JSON.parse(e.target.result);
       if(!Array.isArray(parsed)) throw new Error('invalid format');
+      await refreshSnapshots();
       // week(시점) 키 기준으로 병합: 같은 시점이 이미 있으면 불러온 내용으로 덮어쓰고, 없으면 추가
       let added = 0, updated = 0, skipped = 0, converted = [];
       parsed.forEach(entry=>{
         if(!entry || !entry.week || !entry.data) return;
-        // 날짜 형식(YYYY-MM-DD)으로 저장된 스냅샷은 주차(YYYY-Wnn)로 바꿔서 불러온다
-        if(/^\d{4}-\d{2}-\d{2}$/.test(entry.week)){
-          const wk = isoWeekLabel(parseLocalDate(entry.week));
-          converted.push(entry.week + ' → ' + wk);
-          entry = Object.assign({}, entry, {week: wk});
-        }
+        // 일자 단위(YYYY-MM-DD) 스냅샷은 그대로 둔다 (주차로 바꾸면 같은 주의 여러 날짜가 서로 덮어써짐)
         // 팀 탭에서는 그 팀 항목만, 전체 탭에서는 파일에 들어있는 팀 항목을 교체 (다른 팀 기록은 보존)
         const items = entry.data.map(p => Object.assign({}, p, {team: teamOf(p)}));
         const replaceTeams = new Set(activeTeam === 'all' ? items.map(p => p.team) : [activeTeam]);
@@ -4188,8 +4245,13 @@ function importSnapshotsBackup(event){
 }
 
 async function saveSnapshotsList(){
-  snapshots.sort((a,b)=> a.week < b.week ? -1 : 1);
-  if(snapshots.length > 60) snapshots = snapshots.slice(snapshots.length - 60);
+  snapshots.sort(snapCmp);
+  if(snapshots.length > 60){
+    const dropped = snapshots.slice(0, snapshots.length - 60).map(s => s.week);
+    snapshots = snapshots.slice(snapshots.length - 60);
+    const el = document.getElementById('snapshot-status');
+    if(el) setTimeout(()=>{ el.textContent += ' (보관 한도 60건을 넘어 가장 오래된 ' + dropped.join(', ') + ' 스냅샷이 정리됐어요)'; }, 0);
+  }
   try{
     await window.storage.set(SNAPSHOT_KEY, JSON.stringify(snapshots), true);
     return true;
@@ -4215,11 +4277,9 @@ async function saveSnapshot(btn){
     btn.classList.remove('confirm-armed');
   }
   const entry = {week: key, savedAt: new Date().toISOString(), data: JSON.parse(JSON.stringify(projects))};
-  if(isOverwrite){
-    snapshots[idx] = entry;
-  } else {
-    snapshots.push(entry);
-  }
+  await refreshSnapshots();
+  const idx2 = snapshots.findIndex(s=>s.week===key);
+  if(idx2 >= 0) snapshots[idx2] = entry; else snapshots.push(entry);
   const statusEl = document.getElementById('snapshot-status');
   const ok = await saveSnapshotsList();
   statusEl.textContent = ok ? (key + ' 스냅샷을 저장했어요.') : '저장 실패 - 다시 시도해주세요';
@@ -4227,6 +4287,7 @@ async function saveSnapshot(btn){
 }
 
 async function deleteSnapshot(week){
+  await refreshSnapshots();
   snapshots = snapshots.filter(s=>s.week!==week);
   await saveSnapshotsList();
   renderSnapshots();
@@ -4254,7 +4315,7 @@ function downloadSnapshotJSON(week){
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  setTimeout(()=> URL.revokeObjectURL(url), 1500);
   const el = document.getElementById('snapshot-status');
   if(el) el.textContent = week + ' 개별 백업을 내려받았어요. "📥 스냅샷 백업 불러오기"로 복원할 수 있어요.';
 }
@@ -4273,7 +4334,7 @@ function renderSnapshots(){
     body.appendChild(tr);
     return;
   }
-  [...snapshots].sort((a,b)=> a.week < b.week ? 1 : -1).forEach(entry=>{
+  [...snapshots].sort((a,b)=> snapCmp(b,a)).forEach(entry=>{
     const tr = document.createElement('tr');
     const tdWeek = document.createElement('td');
     tdWeek.style.fontFamily = 'var(--mono)';
@@ -4312,7 +4373,7 @@ function populateCompareSelects(){
   const selA = document.getElementById('cmp-week-a');
   const selB = document.getElementById('cmp-week-b');
   if(!selA || !selB) return;
-  const sorted = [...snapshots].sort((a,b)=> a.week < b.week ? -1 : 1);
+  const sorted = [...snapshots].sort(snapCmp);
   const prevA = selA.value, prevB = selB.value;
   selA.innerHTML = '';
   selB.innerHTML = '';
@@ -4647,7 +4708,7 @@ async function exportCompareToExcel(){
   const a = document.createElement('a');
   a.href = url; a.download = '상품마케팅팀_' + weekA + '_vs_' + weekB + '_비교.xlsx';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  setTimeout(()=> URL.revokeObjectURL(url), 1500);
 }
 
 // ===== 캔버스 유틸 =====
@@ -4689,7 +4750,7 @@ function downloadCanvas(canvas, filename, statusElId){
     const a = document.createElement('a');
     a.href = url; a.download = filename;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    setTimeout(()=> URL.revokeObjectURL(url), 1500);
     if(statusElId) document.getElementById(statusElId).textContent = filename + ' 저장했어요.';
   }, 'image/png');
 }
@@ -5290,7 +5351,7 @@ async function generateReportPPT(btn){
 
   // ===== 슬라이드 8: 지난 스냅샷 대비 변화 분석 (스냅샷이 2개 이상일 때만) =====
   if(snapshots.length >= 2){
-    const sorted = [...snapshots].sort((a,b)=> a.week < b.week ? -1 : 1);
+    const sorted = [...snapshots].sort(snapCmp);
     const prev = sorted[sorted.length-2];
     const curr = sorted[sorted.length-1];
     // 보고 있는 팀·출력 대상 담당자 기준으로만 비교
@@ -5834,8 +5895,10 @@ async function generateTimelineImage(btn, opts){
 }
 
 // ===== 저장 용량 현황 =====
-const STORAGE_TOTAL_LIMIT = 20 * 1024 * 1024;  // 아티팩트 전체 20MB
-const STORAGE_KEY_LIMIT   = 5 * 1024 * 1024;   // 항목 하나당 5MB
+const STORAGE_TOTAL_LIMIT = 1024 * 1024 * 1024; // Firebase RTDB 무료(Spark) 저장 한도 1GB
+const STORAGE_KEY_LIMIT   = 10 * 1024 * 1024;   // RTDB 문자열 값 하나당 최대 10MB
+const STORAGE_TOTAL_LABEL = '1GB';
+const STORAGE_KEY_LABEL   = '10MB';
 
 function fmtBytes(n){
   if(n < 1024) return n + ' B';
@@ -5870,7 +5933,7 @@ function renderStorageUsage(){
   if(badge){
     badge.className = 'st-badge' + (pct >= 85 ? ' danger' : (pct >= 60 ? ' warn' : ''));
     badge.innerHTML = '<span class="mini-bar"><i style="width:' + Math.max(pct, 2) + '%"></i></span>' +
-                      fmtBytes(total) + ' / 20MB (' + pct.toFixed(1) + '%)';
+                      fmtBytes(total) + ' / ' + STORAGE_TOTAL_LABEL + ' (' + pct.toFixed(2) + '%)';
     badge.title = '전체 저장 용량 사용률';
   }
 
@@ -5886,7 +5949,7 @@ function renderStorageUsage(){
   const barColor = pct >= 85 ? 'var(--danger)' : (pct >= 60 ? 'var(--amber)' : 'var(--accent)');
   head.innerHTML = '<span class="st-total-label">전체 사용량</span>' +
     '<span class="st-total-val" style="color:' + barColor + '">' +
-    fmtBytes(total) + ' <span style="font-size:12px;color:var(--ink-muted);font-weight:500">/ 20 MB (' + pct.toFixed(1) + '%)</span></span>';
+    fmtBytes(total) + ' <span style="font-size:12px;color:var(--ink-muted);font-weight:500">/ ' + STORAGE_TOTAL_LABEL + ' (' + pct.toFixed(2) + '%)</span></span>';
   wrap.appendChild(head);
 
   const bar = document.createElement('div');
@@ -5911,6 +5974,11 @@ function renderStorageUsage(){
   } else {
     note.className = 'st-note';
     note.textContent = '여유 공간 ' + fmtBytes(STORAGE_TOTAL_LIMIT - total) + ' 남았어요.';
+  }
+  const bigItem = items.find(it => it.bytes >= STORAGE_KEY_LIMIT * 0.6);
+  if(bigItem && pct < 60){
+    note.className = 'st-note ' + (bigItem.bytes >= STORAGE_KEY_LIMIT * 0.85 ? 'danger' : 'warn');
+    note.textContent = '⚠ ' + bigItem.label + ' 항목이 한도(' + STORAGE_KEY_LABEL + ')에 가까워요. 넘으면 저장이 실패하니 백업 후 정리해주세요.';
   }
   wrap.appendChild(note);
   box.appendChild(wrap);
@@ -5941,7 +6009,7 @@ function renderStorageUsage(){
     mini.appendChild(fill);
     const cap = document.createElement('div');
     cap.style.cssText = 'font-size:10px;color:var(--ink-muted);margin-top:3px;font-family:var(--mono)';
-    cap.textContent = keyPct.toFixed(1) + '% / 5MB';
+    cap.textContent = keyPct.toFixed(1) + '% / ' + STORAGE_KEY_LABEL;
     miniWrap.append(mini, cap);
 
     row.append(name, size, miniWrap);
