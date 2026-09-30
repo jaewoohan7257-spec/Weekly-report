@@ -4664,9 +4664,10 @@ function addGanttSheet(wb, projList, opts){
 
   const ws = wb.addWorksheet('간트차트', {
     views:[{state:'frozen', xSplit:5, ySplit:3, showGridLines:false}],
-    pageSetup:{orientation:'landscape', paperSize:9, fitToPage:true, fitToWidth:1, fitToHeight:0},
-    properties:{outlineProperties:{summaryBelow:false}}
+    pageSetup:{orientation:'landscape', paperSize:9, fitToPage:true, fitToWidth:1, fitToHeight:0}
   });
+  // (주의) outlineProperties는 ExcelJS가 XML 순서를 잘못 써서 Excel이 '손상된 파일'로 판단하므로 쓰지 않는다
+  if(grouped) ws.properties.outlineLevelRow = 1;
   const FIRST = 6, LAST = FIRST + weeks - 1;
   const colL = n => { let t=''; while(n>0){ const m=(n-1)%26; t=String.fromCharCode(65+m)+t; n=Math.floor((n-1)/26); } return t; };
   const fL = colL(FIRST), lL = colL(LAST);
@@ -4730,6 +4731,7 @@ function addGanttSheet(wb, projList, opts){
   projList.forEach(proj=>{
     const steps = proj.steps || [];
     let sumRow = null;
+    const blockStart = r + (grouped ? 1 : 0);
     if(grouped){
       // 프로젝트 요약 행: 단계 일정의 처음~끝을 수식으로 계산 (단계 날짜를 고치면 같이 바뀜)
       sumRow = r;
@@ -4763,7 +4765,6 @@ function addGanttSheet(wb, projList, opts){
       c1.alignment = {vertical:'middle'};
       const c2 = ws.getCell(r,2);
       c2.value = st.status || '예정';
-      c2.dataValidation = {type:'list', allowBlank:true, formulae:['"예정,진행,완료"']};
       c2.alignment = {horizontal:'center', vertical:'middle'};
       dateCell(ws.getCell(r,3), st.start);
       dateCell(ws.getCell(r,4), st.end);
@@ -4772,6 +4773,11 @@ function addGanttSheet(wb, projList, opts){
       borderRow(r, false);
       r++;
     });
+    // 상태 드롭다운: 셀마다 넣으면 ExcelJS가 범위를 겹치게 써서 파일이 손상되므로, 단계 행 묶음 단위로 한 번만 넣는다
+    if(steps.length){
+      ws.dataValidations.add('B' + blockStart + ':B' + (r-1), {type:'list', allowBlank:true, formulae:['"예정,진행,완료"'],
+        showErrorMessage:true, errorTitle:'상태', error:'예정 · 진행 · 완료 중에서 골라주세요.'});
+    }
   });
   const lastRow = r - 1;
 
