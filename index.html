@@ -1220,6 +1220,15 @@ tbody tr:hover td{
 /* 상태색 "진행 중" (화면 코드에서 사용) */
 :root{ --st-prog: var(--accent); }
 
+/* 간트: 짧은 막대의 날짜를 막대 바깥에 표시 */
+.wg-bar{min-width:12px}
+.wg-bar.is-short{padding:0}
+.wg-bar-out{
+  position:absolute; top:50%; transform:translateY(-50%); z-index:2; pointer-events:none;
+  font-size:11px; font-weight:700; color:var(--ink); white-space:nowrap; letter-spacing:-.01em;
+  padding:2px 7px; border-radius:6px; background:rgba(255,255,255,.92); border:1px solid var(--line);
+}
+
 /* 상세 화면 상단 고정 바 (틀 고정) — 스크롤해도 '목록으로' 버튼이 항상 보이도록 */
 .detail-topbar{
   position:sticky; top:8px; z-index:60;
@@ -3198,6 +3207,7 @@ function buildPeriodGantt(container, rows, opts){
       bar.style.width = widthPct + '%';
       bar.style.background = r.color;
       bar.textContent = r.barText || '';
+      bar.dataset.full = r.barText || '';
       bar.title = r.title || r.barText || '';
       barTrack.appendChild(bar);
       cellsWrap.appendChild(barTrack);
@@ -3208,6 +3218,12 @@ function buildPeriodGantt(container, rows, opts){
   });
 
   container.appendChild(wrap);
+  fitGanttLabels(wrap);
+  // 패널을 펼치거나 창 크기가 바뀌면 다시 맞춘다
+  if(typeof ResizeObserver !== 'undefined'){
+    let _t = null;
+    new ResizeObserver(()=>{ clearTimeout(_t); _t = setTimeout(()=>fitGanttLabels(wrap), 60); }).observe(wrap);
+  }
 
   // 오늘 날짜가 표시 범위 안에 있으면 세로 기준선을 그려준다
   const todayTs = new Date(todayISO() + 'T00:00:00').getTime();
@@ -3227,6 +3243,34 @@ function buildPeriodGantt(container, rows, opts){
     wrap.appendChild(overlay);
   }
 }
+
+// 막대가 짧아 날짜 글자가 잘리면, 글자를 막대 오른쪽(공간이 없으면 왼쪽) 바깥에 표시한다
+function fitGanttLabels(wrap){
+  if(!wrap || !wrap.isConnected) return;
+  wrap.querySelectorAll('.wg-bar-out').forEach(el=>el.remove());
+  wrap.querySelectorAll('.wg-bar').forEach(bar=>{
+    const full = bar.dataset.full || '';
+    bar.textContent = full;
+    bar.classList.remove('is-short');
+    if(!full || bar.clientWidth === 0) return;          // 숨겨진 상태면 다음 기회에
+    if(bar.scrollWidth <= bar.clientWidth + 1) return;   // 막대 안에 다 들어감
+    bar.textContent = '';
+    bar.classList.add('is-short');
+    const track = bar.parentElement;
+    const out = document.createElement('div');
+    out.className = 'wg-bar-out';
+    out.textContent = full;
+    track.appendChild(out);
+    const tw = track.clientWidth, ow = out.offsetWidth;
+    const bl = bar.offsetLeft, br = bl + bar.offsetWidth;
+    let left;
+    if(br + 6 + ow <= tw) left = br + 6;
+    else if(bl - 6 - ow >= 0) left = bl - 6 - ow;
+    else left = Math.max(0, tw - ow);
+    out.style.left = left + 'px';
+  });
+}
+window.addEventListener('resize', ()=>{ document.querySelectorAll('.wg-wrap').forEach(fitGanttLabels); });
 
 function renderGantt(proj){
   const ganttBox = document.getElementById('d-gantt');
@@ -4512,7 +4556,7 @@ async function ensureExcelLib(){
 }
 
 // structuredRows: [{type:'project'|'gate'|'step', cells:[...]}]  (열 구성은 EXPORT_HEADER와 동일)
-async function downloadStyledSheet(structuredRows, filename, sheetName){
+async function downloadStyledSheet(structuredRows, filename, sheetName, extraSheets){
   if(!(await ensureExcelLib())){
     alert('엑셀 내보내기 기능을 불러오지 못했습니다. 네트워크가 외부 스크립트를 차단하고 있을 수 있어요.');
     return;
@@ -4556,6 +4600,7 @@ async function downloadStyledSheet(structuredRows, filename, sheetName){
 
   ws.views = [{state:'frozen', ySplit:1}];
   ws.autoFilter = {from:{row:1,column:1}, to:{row:1,column:EXPORT_HEADER.length}};
+  if(typeof extraSheets === 'function') extraSheets(wb);
 
   const buf = await wb.xlsx.writeBuffer();
   const blob = new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
@@ -4569,7 +4614,148 @@ async function downloadStyledSheet(structuredRows, filename, sheetName){
 function exportProjectToExcel(){
   const proj = projects.find(p=>p.id===currentDetailId);
   if(!proj) return;
-  downloadStyledSheet(projectToStyledRows(proj), proj.name + '_주간보고_' + todayStr() + '.xlsx', '주간보고');
+  downloadStyledSheet(projectToStyledRows(proj), proj.name + '_주간보고_' + todayStr() + '.xlsx', '주간보고',
+    wb => addGanttSheet(wb, proj));
+}
+
+// ===== 엑셀 간트 시트 (수정 가능) =====
+// 시작일·마감일·상태를 바꾸면 조건부 서식으로 막대가 자동으로 다시 칠해진다.
+// 주 단위 칸이라 하루짜리 짧은 일정도 최소 한 칸으로 보인다.
+function addGanttSheet(wb, proj){
+  const ymd = s => { const [y,m,d] = s.split('-').map(Number); return new Date(Date.UTC(y, m-1, d)); };
+  const steps = (proj.steps || []);
+  const dated = steps.filter(s => s.start && s.end && s.stage !== 'GATE 3');
+  const all = dated.length ? dated : steps.filter(s => s.start && s.end);
+
+  // 표시 기간: 가장 이른 시작 주 1주 전 ~ 가장 늦은 마감 + 4주 (수정 여유), 최대 80주
+  const today = parseLocalDate(todayISO());
+  let minD = all.length ? parseLocalDate(all.map(s=>s.start).sort()[0]) : today;
+  let maxD = all.length ? parseLocalDate(all.map(s=>s.end).sort().slice(-1)[0]) : new Date(today.getTime() + 84*86400000);
+  const mon = d => { const x = new Date(d); x.setDate(x.getDate() - ((x.getDay()+6)%7)); return x; };
+  const startMon = mon(minD); startMon.setDate(startMon.getDate() - 7);
+  let weeks = Math.ceil((maxD - startMon) / (7*86400000)) + 5;
+  weeks = Math.min(Math.max(weeks, 12), 80);
+
+
+  const ws = wb.addWorksheet('간트차트', {views:[{state:'frozen', xSplit:5, ySplit:3, showGridLines:false}],
+    pageSetup:{orientation:'landscape', paperSize:9, fitToPage:true, fitToWidth:1, fitToHeight:0}});
+  // 공휴일 시트 (영업일 계산용 — 간트 시트 뒤에 둔다)
+  const hs = wb.addWorksheet('공휴일');
+  hs.getCell('A1').value = '공휴일 (영업일 계산에서 제외 · 날짜를 추가해도 됩니다)';
+  hs.getCell('A1').font = {bold:true};
+  [...KR_HOLIDAYS].sort().forEach((h,i)=>{
+    const c = hs.getCell(i+2, 1); c.value = ymd(h); c.numFmt = 'yyyy-mm-dd';
+  });
+  hs.getColumn(1).width = 44;
+  const holRange = '공휴일!$A$2:$A$300';
+  const FIRST = 6;                         // F열부터 주 칸
+  const LAST = FIRST + weeks - 1;
+  const colL = n => { let s=''; while(n>0){ const m=(n-1)%26; s=String.fromCharCode(65+m)+s; n=Math.floor((n-1)/26); } return s; };
+  const fL = colL(FIRST), lL = colL(LAST);
+
+  ws.getColumn(1).width = 22; ws.getColumn(2).width = 8; ws.getColumn(3).width = 12;
+  ws.getColumn(4).width = 12; ws.getColumn(5).width = 8;
+  for(let c=FIRST; c<=LAST; c++) ws.getColumn(c).width = 4.2;
+
+  // 1행: 제목
+  ws.mergeCells(1, 1, 1, Math.min(LAST, FIRST + 14));
+  const t = ws.getCell(1,1);
+  t.value = proj.name + '  ·  일정 간트차트';
+  t.font = {bold:true, size:13, color:{argb:'FF2146C7'}};
+  t.alignment = {vertical:'middle'};
+  ws.getRow(1).height = 24;
+
+  // 2~3행: 머리글 (2행 = 월, 3행 = 주 시작일)
+  const HEAD_FILL = {type:'pattern', pattern:'solid', fgColor:{argb:'FF2146C7'}};
+  const headFont = {bold:true, color:{argb:'FFFFFFFF'}, size:9};
+  ['단계','상태','시작일','마감일','영업일'].forEach((h,i)=>{
+    ws.mergeCells(2, i+1, 3, i+1);
+    const c = ws.getCell(2, i+1);
+    c.value = h; c.fill = HEAD_FILL; c.font = Object.assign({}, headFont, {size:10});
+    c.alignment = {vertical:'middle', horizontal:'center'};
+  });
+  for(let c=FIRST; c<=LAST; c++){
+    const cl = colL(c);
+    const wk = ws.getCell(3, c);
+    if(c === FIRST){ wk.value = new Date(Date.UTC(startMon.getFullYear(), startMon.getMonth(), startMon.getDate())); }
+    else { wk.value = {formula: colL(c-1) + '3+7'}; }
+    wk.numFmt = 'm/d';
+    wk.fill = HEAD_FILL; wk.font = headFont;
+    wk.alignment = {vertical:'middle', horizontal:'center', textRotation:90};
+    const mo = ws.getCell(2, c);
+    // 좁은 칸에도 들어가도록 짧게: 첫 칸·1월은 '26.6' 형식, 그 외 달이 바뀌는 칸은 '7월'
+    const label = 'IF(OR(' + (c === FIRST ? 'TRUE' : 'FALSE') + ',MONTH(' + cl + '3)=1),TEXT(' + cl + '3,"yy.m"),MONTH(' + cl + '3)&"월")';
+    mo.value = {formula: c === FIRST ? label : 'IF(MONTH(' + cl + '3)<>MONTH(' + colL(c-1) + '3),' + label + ',"")'};
+    mo.fill = HEAD_FILL; mo.font = headFont;
+    mo.alignment = {vertical:'middle', horizontal:'left'};
+  }
+  ws.getRow(2).height = 16;
+  ws.getRow(3).height = 34;
+
+  // 4행~: 단계별 행
+  const thin = {style:'thin', color:{argb:'FFE7EAF0'}};
+  const firstRow = 4;
+  steps.forEach((st, i)=>{
+    const r = firstRow + i;
+    const row = ws.getRow(r);
+    row.height = 20;
+    ws.getCell(r,1).value = STAGE_LABEL[st.stage] || st.stage;
+    ws.getCell(r,1).font = {bold: st.stage.indexOf('GATE') === 0, size:10};
+    ws.getCell(r,2).value = st.status || '예정';
+    ws.getCell(r,2).dataValidation = {type:'list', allowBlank:true, formulae:['"예정,진행,완료"']};
+    ws.getCell(r,2).alignment = {horizontal:'center', vertical:'middle'};
+    [3,4].forEach(col=>{
+      const v = col === 3 ? st.start : st.end;
+      const c = ws.getCell(r, col);
+      if(v) c.value = ymd(v);
+      c.numFmt = 'yyyy-mm-dd';
+      c.alignment = {horizontal:'center', vertical:'middle'};
+      c.dataValidation = {type:'date', operator:'greaterThan', allowBlank:true,
+        formulae:[new Date(Date.UTC(2000,0,1))], showErrorMessage:true, errorTitle:'날짜 형식', error:'날짜를 yyyy-mm-dd 형식으로 입력해주세요.'};
+    });
+    ws.getCell(r,5).value = {formula:'IF(AND(C'+r+'<>"",D'+r+'<>""),NETWORKDAYS(C'+r+',D'+r+','+holRange+'),"")'};
+    ws.getCell(r,5).alignment = {horizontal:'center', vertical:'middle'};
+    for(let c=1; c<=LAST; c++){
+      const cell = ws.getCell(r, c);
+      cell.border = {top:thin, bottom:thin, left: c>=FIRST ? {style:'hair', color:{argb:'FFE7EAF0'}} : thin, right: c>=FIRST ? {style:'hair', color:{argb:'FFE7EAF0'}} : thin};
+      if(c <= 5 && !cell.alignment) cell.alignment = {vertical:'middle'};
+    }
+  });
+  const lastRow = firstRow + steps.length - 1;
+  const area = fL + firstRow + ':' + lL + lastRow;
+  const tl = fL + firstRow;                 // 좌상단 셀 (상대 참조 기준)
+  const inBar = 'AND($C'+firstRow+'<>"",$D'+firstRow+'<>"",'+fL+'$3+6>=$C'+firstRow+','+fL+'$3<=$D'+firstRow+')';
+  const fill = argb => ({fill:{type:'pattern', pattern:'solid', bgColor:{argb}}});
+  ws.addConditionalFormatting({ref: area, rules:[
+    {type:'expression', priority:1, formulae:['AND('+inBar+',$B'+firstRow+'="완료")'], style: fill('FF34D399')},
+    {type:'expression', priority:2, formulae:['AND('+inBar+',$B'+firstRow+'="진행")'], style: fill('FFF5A83C')},
+    {type:'expression', priority:3, formulae:[inBar], style: fill('FF8A94AD')},
+    {type:'expression', priority:4, formulae:['AND(TODAY()>='+fL+'$3,TODAY()<'+fL+'$3+7)'], style: fill('FFFDE2E2')},
+  ]});
+  // 상태 칸 색
+  ws.addConditionalFormatting({ref:'B'+firstRow+':B'+lastRow, rules:[
+    {type:'cellIs', operator:'equal', priority:5, formulae:['"완료"'], style:{font:{bold:true, color:{argb:'FF087457'}}, fill:{type:'pattern', pattern:'solid', bgColor:{argb:'FFE9F8F3'}}}},
+    {type:'cellIs', operator:'equal', priority:6, formulae:['"진행"'], style:{font:{bold:true, color:{argb:'FF9A650B'}}, fill:{type:'pattern', pattern:'solid', bgColor:{argb:'FFFFF5DE'}}}},
+  ]});
+  // 오늘 주 머리글 강조
+  ws.addConditionalFormatting({ref: fL+'3:'+lL+'3', rules:[
+    {type:'expression', priority:7, formulae:['AND(TODAY()>='+fL+'$3,TODAY()<'+fL+'$3+7)'], style:{fill:{type:'pattern', pattern:'solid', bgColor:{argb:'FFD84A4A'}}}},
+  ]});
+
+  // 범례
+  const lg = lastRow + 2;
+  const legend = [['완료','FF34D399'],['진행','FFF5A83C'],['예정','FF8A94AD'],['이번 주','FFFDE2E2']];
+  ws.getCell(lg,1).value = '범례'; ws.getCell(lg,1).font = {bold:true, size:9};
+  legend.forEach(([name, col], i)=>{
+    const c = ws.getCell(lg, 2 + i);
+    c.value = name; c.font = {size:9, bold:true, color:{argb: name==='이번 주' ? 'FFD84A4A' : 'FFFFFFFF'}};
+    c.fill = {type:'pattern', pattern:'solid', fgColor:{argb:col}};
+    c.alignment = {horizontal:'center'};
+  });
+  ws.getCell(lg+1,1).value = '※ 상태·시작일·마감일을 고치면 막대가 자동으로 바뀝니다. ' + fL + '3 칸(첫 주 시작일)을 바꾸면 표 전체 기간이 이동합니다.';
+  ws.getCell(lg+2,1).value = '※ 주 단위 칸이라 며칠짜리 짧은 일정도 한 칸 이상으로 표시돼요. 영업일은 주말·공휴일(공휴일 시트)을 뺀 일수예요.';
+  [lg+1, lg+2].forEach(rr=>{ ws.getCell(rr,1).font = {size:9, color:{argb:'FF667085'}}; });
+
 }
 
 function exportAllToExcel(){
@@ -5659,6 +5845,55 @@ async function generateReportPPT(btn){
   const ACCENT_C = hexNoHash(ACCENT, '#2f5d8a');
   const FOREST_C = hexNoHash(cssVar('--forest'), '#3a7d44');
 
+  // ===== 텍스트 높이 측정 (카드 크기를 내용에 맞춰 자동 조정하기 위함) =====
+  // 브라우저 캔버스로 실제 글자 폭을 재서 PowerPoint 줄바꿈을 보수적으로 추정한다 (한글은 어절 단위 줄바꿈)
+  const _mctx = document.createElement('canvas').getContext('2d');
+  const TEXT_INSET_X = 0.2, TEXT_INSET_Y = 0.1, WIDTH_SAFETY = 1.08;
+  function measureW(str, pt, bold){
+    _mctx.font = (bold ? 'bold ' : '') + (pt * 96 / 72) + 'px "' + PPT_FONT + '", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif';
+    return _mctx.measureText(str).width / 96 * WIDTH_SAFETY;   // 인치
+  }
+  function countLines(text, pt, boxW, bold){
+    const avail = Math.max(0.3, boxW - TEXT_INSET_X);
+    let lines = 0;
+    String(text || '').split('\n').forEach(para=>{
+      if(!para.trim()){ lines++; return; }
+      let cur = '';
+      const tokens = para.split(/(\s+)/);
+      tokens.forEach(tok=>{
+        if(tok === '') return;
+        const next = cur + tok;
+        if(measureW(next, pt, bold) <= avail){ cur = next; return; }
+        if(cur.trim()){ lines++; cur = tok.replace(/^\s+/, ''); }
+        else cur = tok.replace(/^\s+/, '');
+        // 한 어절이 한 줄보다 길면 글자 단위로 끊는다
+        while(measureW(cur, pt, bold) > avail){
+          let k = cur.length;
+          while(k > 1 && measureW(cur.slice(0, k), pt, bold) > avail) k--;
+          lines++; cur = cur.slice(k);
+        }
+      });
+      lines++;
+    });
+    return Math.max(lines, 1);
+  }
+  // 줄 수 → 글상자 높이(인치)
+  function textH(text, pt, boxW, bold, lineMult){
+    return countLines(text, pt, boxW, bold) * pt * 1.2 * (lineMult || 1) / 72 + TEXT_INSET_Y;
+  }
+  // 한 줄에 들어가도록 글자 크기를 줄이고, 그래도 넘치면 말줄임
+  function fitOneLine(text, pt, minPt, boxW, bold){
+    const avail = boxW - TEXT_INSET_X;
+    let size = pt;
+    while(size > minPt && measureW(text, size, bold) > avail) size -= 0.5;
+    let t = String(text || '');
+    if(measureW(t, size, bold) > avail){
+      while(t.length > 1 && measureW(t + '…', size, bold) > avail) t = t.slice(0, -1);
+      t += '…';
+    }
+    return {text: t, size};
+  }
+
   const pptx = new PptxGenJS();
   pptx.defineLayout({ name: 'CUSTOM', width: SW, height: SH });
   pptx.layout = 'CUSTOM';
@@ -5719,9 +5954,9 @@ async function generateReportPPT(btn){
         // 순위 + 이름
         sk.addText(String(i+1), {x:pad+0.16, y:cy+0.10, w:0.3, h:0.3,
           fontSize:fs(15), bold:true, color:MUTED_C, align:'center', valign:'middle', fontFace:PPT_FONT});
-        const nameTxt = (pr.tier === 'key' ? '[핵심] ' : '') + p.name;
-        sk.addText(nameTxt, {x:pad+0.48, y:cy+0.10, w:contentW-1.5, h:0.3,
-          fontSize:fs(12), bold:true, color:INK_C, valign:'middle', fontFace:PPT_FONT});
+        const nameFit = fitOneLine((pr.tier === 'key' ? '[핵심] ' : '') + p.name, fs(12), 9, contentW-1.5, true);
+        sk.addText(nameFit.text, {x:pad+0.48, y:cy+0.10, w:contentW-1.5, h:0.3,
+          fontSize:nameFit.size, bold:true, color:INK_C, valign:'middle', fontFace:PPT_FONT, wrap:false});
         // 점수
         sk.addText(String(pr.score), {x:pad, y:cy+0.10, w:contentW-0.18, h:0.3,
           fontSize:fs(15), bold:true, color:lv, align:'right', valign:'middle', fontFace:PPT_FONT});
@@ -5833,55 +6068,91 @@ async function generateReportPPT(btn){
   const actives = projects.filter(isActive).filter(inTeam).filter(inScope);
   const LEVEL_ORDER = {'상':0, '중':1, '하':2, '':3};
 
-  // 카드형 슬라이드 렌더러 (항목이 많으면 자동으로 페이지 분할)
+  // 카드형 슬라이드 렌더러 — 카드 높이를 내용(제목·본문 줄 수)에 맞춰 자동 조정하고,
+  // 슬라이드 높이를 넘으면 다음 장으로 넘긴다 (2열, 같은 줄의 카드는 높이를 맞춤)
   function addCardSlide(heading, accent, items){
-    const cols = 2, rowsPerPage = 4;
-    const perPage = cols * rowsPerPage;
-    const pages = Math.ceil(items.length / perPage) || 1;
+    const cols = 2, gapX = 0.22, gapY = 0.20, top = 1.15, bottomPad = 0.35;
+    const cardW = (contentW - gapX*(cols-1)) / cols;
+    const textW = cardW - 0.28;
+    const MIN_H = 1.10;
+    const maxCardH = SH - top - bottomPad;
 
-    for(let pg=0; pg<pages; pg++){
+    // 1) 카드별 필요한 높이 계산 (너무 길면 본문 글자를 줄이고, 그래도 넘치면 뒷부분 생략)
+    const laid = items.map(it=>{
+      const titlePt = fs(12);
+      const titleH = Math.max(0.30, textH(it.title, titlePt, textW, true));
+      let bodyPt = fs(10), body = it.body || '';
+      const bodyTop = 0.40 + titleH + 0.02;
+      let bodyH = body ? textH(body, bodyPt, textW, false, 1.2) : 0;
+      while(bodyTop + bodyH + 0.12 > maxCardH && bodyPt > 8){
+        bodyPt -= 0.5; bodyH = textH(body, bodyPt, textW, false, 1.2);
+      }
+      if(bodyTop + bodyH + 0.12 > maxCardH){
+        const lineH = bodyPt * 1.2 * 1.2 / 72;
+        const maxLines = Math.max(1, Math.floor((maxCardH - bodyTop - 0.12 - TEXT_INSET_Y) / lineH) - 1);
+        let t = body;
+        while(t.length > 10 && countLines(t + '…', bodyPt, textW, false) > maxLines) t = t.slice(0, Math.floor(t.length*0.95));
+        body = t + '… (이하 현황판 참조)';
+        bodyH = textH(body, bodyPt, textW, false, 1.2);
+      }
+      const h = Math.max(MIN_H, bodyTop + bodyH + 0.12);
+      return Object.assign({}, it, {titleH, bodyTop, bodyPt, bodyH, body, h});
+    });
+
+    // 2) 2개씩 한 줄로 묶고, 줄 높이 = 두 카드 중 큰 값 → 페이지에 담기
+    const rows = [];
+    for(let i=0; i<laid.length; i+=cols) rows.push(laid.slice(i, i+cols));
+    const pages = [[]];
+    let used = 0;
+    rows.forEach(row=>{
+      const rh = Math.max(...row.map(c=>c.h));
+      if(pages[pages.length-1].length && used + rh > maxCardH){ pages.push([]); used = 0; }
+      pages[pages.length-1].push({row, rh});
+      used += rh + gapY;
+    });
+
+    // 3) 그리기
+    pages.forEach((pageRows, pg)=>{
       const sl = pptx.addSlide();
       sl.background = { color: hexNoHash(BG, '#f4f2ec') };
       sl.addShape('rect', {x:0, y:0, w:SW, h:0.09, fill:{color:accent}});
-      sl.addText(heading + (pages>1 ? '  (' + (pg+1) + '/' + pages + ')' : ''), {
+      sl.addText(heading + (pages.length>1 ? '  (' + (pg+1) + '/' + pages.length + ')' : ''), {
         x:pad, y:0.34, w:contentW, h:0.5, fontSize:fs(24), bold:true, color:accent, fontFace:PPT_FONT
       });
+      let y = top;
+      pageRows.forEach(({row, rh})=>{
+        row.forEach((it, c)=>{
+          const x = pad + c*(cardW+gapX);
+          const cardH = rh;
+          const barC = it.barColor || accent;
+          sl.addShape('roundRect', {x, y, w:cardW, h:cardH, rectRadius:0.06,
+            fill:{color:CARD_C}, line:{color:LINE_C, width:0.5},
+            shadow:{type:'outer', blur:6, offset:1, angle:90, color:'999999', opacity:0.18}});
+          sl.addShape('roundRect', {x:x+0.05, y:y+0.12, w:0.055, h:cardH-0.24, rectRadius:0.03,
+            fill:{color:barC}, line:{color:barC, width:0}});
 
-      const gapX=0.22, gapY=0.20;
-      const cardW = (contentW - gapX*(cols-1)) / cols;
-      const cardH = 1.28;
-      const top = 1.15;
+          // 배지 (한글은 폭이 넓어 글자당 가중치를 다르게 계산)
+          const wUnits = [...it.badge].reduce((a,ch)=>{ const cp = ch.charCodeAt(0); return a + ((cp >= 44032 && cp <= 55203) ? 1 : 0.72); }, 0);
+          const badgeW = Math.max(0.50, 0.28 + wUnits*0.145);
+          sl.addShape('roundRect', {x:x+0.19, y:y+0.13, w:badgeW, h:0.24, rectRadius:0.12,
+            fill:{color:barC}, line:{color:barC, width:0}});
+          sl.addText(it.badge, {x:x+0.19, y:y+0.13, w:badgeW, h:0.24,
+            fontSize:fs(10), bold:true, color:'FFFFFF', align:'center', valign:'middle', fontFace:PPT_FONT, wrap:false});
 
-      items.slice(pg*perPage, (pg+1)*perPage).forEach((it, i)=>{
-        const c = i % cols, r = Math.floor(i / cols);
-        const x = pad + c*(cardW+gapX);
-        const y = top + r*(cardH+gapY);
-        const barC = it.barColor || accent;
-
-        sl.addShape('roundRect', {x, y, w:cardW, h:cardH, rectRadius:0.06,
-          fill:{color:CARD_C}, line:{color:LINE_C, width:0.5},
-          shadow:{type:'outer', blur:6, offset:1, angle:90, color:'999999', opacity:0.18}});
-        sl.addShape('roundRect', {x:x+0.05, y:y+0.12, w:0.055, h:cardH-0.24, rectRadius:0.03,
-          fill:{color:barC}, line:{color:barC, width:0}});
-
-        // 배지 (한글은 폭이 넓어 글자당 가중치를 다르게 계산)
-        const wUnits = [...it.badge].reduce((a,ch)=>{ const cp = ch.charCodeAt(0); return a + ((cp >= 44032 && cp <= 55203) ? 1 : 0.72); }, 0);
-        const badgeW = Math.max(0.50, 0.28 + wUnits*0.145);
-        sl.addShape('roundRect', {x:x+0.19, y:y+0.13, w:badgeW, h:0.24, rectRadius:0.12,
-          fill:{color:barC}, line:{color:barC, width:0}});
-        sl.addText(it.badge, {x:x+0.19, y:y+0.13, w:badgeW, h:0.24,
-          fontSize:fs(10), bold:true, color:'FFFFFF', align:'center', valign:'middle', fontFace:PPT_FONT, wrap:false});
-
-        if(it.meta){
-          sl.addText(it.meta, {x:x+badgeW+0.24, y:y+0.13, w:cardW-badgeW-0.34, h:0.24,
-            fontSize:fs(10), color:MUTED_C, valign:'middle', align:'right', fontFace:PPT_FONT});
-        }
-        sl.addText(it.title, {x:x+0.19, y:y+0.40, w:cardW-0.28, h:0.30,
-          fontSize:fs(12), bold:true, color:INK_C, fontFace:PPT_FONT, valign:'middle'});
-        sl.addText(it.body || '', {x:x+0.19, y:y+0.68, w:cardW-0.28, h:cardH-0.78,
-          fontSize:fs(10), color:SOFT_C, fontFace:PPT_FONT, valign:'top', lineSpacingMultiple:1.2});
+          if(it.meta){
+            sl.addText(it.meta, {x:x+badgeW+0.24, y:y+0.13, w:cardW-badgeW-0.34, h:0.24,
+              fontSize:fs(10), color:MUTED_C, valign:'middle', align:'right', fontFace:PPT_FONT});
+          }
+          sl.addText(it.title, {x:x+0.19, y:y+0.40, w:textW, h:it.titleH,
+            fontSize:fs(12), bold:true, color:INK_C, fontFace:PPT_FONT, valign:'top'});
+          if(it.body){
+            sl.addText(it.body, {x:x+0.19, y:y+it.bodyTop, w:textW, h:it.bodyH,
+              fontSize:it.bodyPt, color:SOFT_C, fontFace:PPT_FONT, valign:'top', lineSpacingMultiple:1.2});
+          }
+        });
+        y += rh + gapY;
       });
-    }
+    });
   }
 
   // 최신 주간보고 기록을 기준으로 항목 구성
@@ -5923,25 +6194,47 @@ async function generateReportPPT(btn){
   const totalWeekly = issueItems.length + helpItems.length + planItems.length;
   const MERGE_LIMIT = 6;
 
+  // 통합 요약 한 장 레이아웃 계산 (카드 높이를 내용에 맞추고, 한 장에 다 들어가는지 확인)
+  const mergeSections = [
+    {title:'주요 애로사항',     marker:'circle', color:DANGER_C, items:issueItems},
+    {title:'타 부서 협조 요청', marker:'square', color:ACCENT_C, items:helpItems},
+    {title:'다음 주 실행 계획', marker:'chev',   color:FOREST_C, items:planItems},
+  ].filter(sec => sec.items.length);
+  const M_CARD_GAP = 0.08, M_SEC_GAP = 0.20, M_HEAD_H = 0.30, M_TOP = 1.12;
+  let mergeFits = false;
   if(totalWeekly > 0 && totalWeekly <= MERGE_LIMIT){
+    let yy = M_TOP;
+    mergeSections.forEach(sec=>{
+      yy += M_HEAD_H + 0.04;
+      sec.items = sec.items.map(it=>{
+        const wUnits = [...it.badge].reduce((a,ch)=>{ const cp = ch.charCodeAt(0); return a + ((cp >= 44032 && cp <= 55203) ? 1 : 0.72); }, 0);
+        const badgeW = Math.max(0.46, 0.26 + wUnits*0.135);
+        const metaW = Math.min(contentW*0.35, measureW(it.meta || '', fs(9), false) + 0.3);
+        const titleW = contentW - badgeW - 0.40 - metaW;
+        const titleH = Math.max(0.26, textH(it.title, fs(11), titleW, true));
+        const bodyTop = 0.08 + titleH + 0.02;
+        const bodyW = contentW - 0.32;
+        const bodyH = it.body ? textH(it.body, fs(9.5), bodyW, false) : 0;
+        const cardH = Math.max(0.66, bodyTop + bodyH + 0.08);
+        yy += cardH + M_CARD_GAP;
+        return Object.assign({}, it, {badgeW, metaW, titleW, titleH, bodyTop, bodyW, bodyH, cardH});
+      });
+      yy += M_SEC_GAP - M_CARD_GAP;
+    });
+    mergeFits = (yy <= SH - 0.3);
+  }
+
+  if(mergeFits){
     const sl = pptx.addSlide();
     sl.background = { color: hexNoHash(BG, '#f4f2ec') };
     sl.addShape('rect', {x:0, y:0, w:SW, h:0.09, fill:{color:ACCENT_C}});
     sl.addText('주간보고 요약 (애로사항 · 협조요청 · 차주계획)', {
       x:pad, y:0.34, w:contentW, h:0.5, fontSize:fs(22), bold:true, color:ACCENT_C, fontFace:PPT_FONT});
 
-    // 이모지는 PowerPoint 폰트에 따라 네모로 깨질 수 있어, 도형으로 직접 마커를 그린다
-    const sections = [
-      {title:'주요 애로사항',     marker:'circle', color:DANGER_C, items:issueItems},
-      {title:'타 부서 협조 요청', marker:'square', color:ACCENT_C, items:helpItems},
-      {title:'다음 주 실행 계획', marker:'chev',   color:FOREST_C, items:planItems},
-    ].filter(sec => sec.items.length);
-
-    let cy = 1.12;
-    const cardH = 0.66, cardGap = 0.08, secGap = 0.20, headH = 0.30;
-
-    sections.forEach(sec=>{
-      const mY = cy + headH/2 - 0.055;
+    let cy = M_TOP;
+    mergeSections.forEach(sec=>{
+      // 이모지는 PowerPoint 폰트에 따라 네모로 깨질 수 있어, 도형으로 직접 마커를 그린다
+      const mY = cy + M_HEAD_H/2 - 0.055;
       if(sec.marker === 'circle'){
         sl.addShape('ellipse', {x:pad, y:mY, w:0.11, h:0.11,
           fill:{color:sec.color}, line:{color:sec.color, width:0}});
@@ -5953,33 +6246,31 @@ async function generateReportPPT(btn){
           fill:{color:sec.color}, line:{color:sec.color, width:0}});
       }
       sl.addText(sec.title + '  (' + sec.items.length + '건)', {
-        x:pad+0.19, y:cy, w:contentW-0.19, h:headH, fontSize:fs(13), bold:true,
+        x:pad+0.19, y:cy, w:contentW-0.19, h:M_HEAD_H, fontSize:fs(13), bold:true,
         color:sec.color, fontFace:PPT_FONT, valign:'middle'});
-      cy += headH + 0.04;
+      cy += M_HEAD_H + 0.04;
 
       sec.items.forEach(it=>{
+        const cardH = it.cardH;
         sl.addShape('roundRect', {x:pad, y:cy, w:contentW, h:cardH, rectRadius:0.055,
           fill:{color:CARD_C}, line:{color:LINE_C, width:0.5}});
         sl.addShape('roundRect', {x:pad+0.05, y:cy+0.09, w:0.05, h:cardH-0.18, rectRadius:0.025,
           fill:{color:it.barColor}, line:{color:it.barColor, width:0}});
-
-        const wUnits = [...it.badge].reduce((a,ch)=>{ const cp = ch.charCodeAt(0); return a + ((cp >= 44032 && cp <= 55203) ? 1 : 0.72); }, 0);
-        const badgeW = Math.max(0.46, 0.26 + wUnits*0.135);
-        sl.addShape('roundRect', {x:pad+0.18, y:cy+0.10, w:badgeW, h:0.22, rectRadius:0.11,
+        sl.addShape('roundRect', {x:pad+0.18, y:cy+0.10, w:it.badgeW, h:0.22, rectRadius:0.11,
           fill:{color:it.barColor}, line:{color:it.barColor, width:0}});
-        sl.addText(it.badge, {x:pad+0.18, y:cy+0.10, w:badgeW, h:0.22,
+        sl.addText(it.badge, {x:pad+0.18, y:cy+0.10, w:it.badgeW, h:0.22,
           fontSize:fs(9), bold:true, color:'FFFFFF', align:'center', valign:'middle', fontFace:PPT_FONT, wrap:false});
-
-        sl.addText(it.title, {x:pad+badgeW+0.26, y:cy+0.08, w:contentW-badgeW-0.40, h:0.26,
-          fontSize:fs(11), bold:true, color:INK_C, fontFace:PPT_FONT, valign:'middle'});
-        sl.addText(it.meta || '', {x:pad, y:cy+0.08, w:contentW-0.16, h:0.26,
+        sl.addText(it.title, {x:pad+it.badgeW+0.26, y:cy+0.08, w:it.titleW, h:it.titleH,
+          fontSize:fs(11), bold:true, color:INK_C, fontFace:PPT_FONT, valign:'top'});
+        sl.addText(it.meta || '', {x:pad+contentW-it.metaW-0.16, y:cy+0.08, w:it.metaW, h:0.26,
           fontSize:fs(9), color:MUTED_C, align:'right', valign:'middle', fontFace:PPT_FONT});
-        sl.addText(it.body || '', {x:pad+0.18, y:cy+0.36, w:contentW-0.32, h:cardH-0.40,
-          fontSize:fs(9.5), color:SOFT_C, fontFace:PPT_FONT, valign:'top'});
-
-        cy += cardH + cardGap;
+        if(it.body){
+          sl.addText(it.body, {x:pad+0.18, y:cy+it.bodyTop, w:it.bodyW, h:it.bodyH,
+            fontSize:fs(9.5), color:SOFT_C, fontFace:PPT_FONT, valign:'top'});
+        }
+        cy += cardH + M_CARD_GAP;
       });
-      cy += secGap - cardGap;
+      cy += M_SEC_GAP - M_CARD_GAP;
     });
   } else {
     if(issueItems.length) addCardSlide('주요 애로사항 (' + issueItems.length + '건)', DANGER_C, issueItems);
@@ -6489,7 +6780,9 @@ async function generateTimelineImage(btn, opts){
           ctx.fillText(label, sx+12, barY+barH/2+4);
         } else {
           ctx.fillStyle=INK_MUTED;
-          ctx.fillText(label, sx+barW+8, barY+barH/2+4);
+          const lw = ctx.measureText(label).width;
+          const lx = (sx+barW+8+lw <= gridX+gridW) ? sx+barW+8 : Math.max(gridX+4, sx-8-lw);
+          ctx.fillText(label, lx, barY+barH/2+4);
         }
         cy += ROW_H;
       });
