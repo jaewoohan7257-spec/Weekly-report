@@ -1217,6 +1217,398 @@ tbody tr:hover td{
 }
 
 
+/* =========================================================
+   PREMIUM DASHBOARD V6 — Team Pages + Refined Infographic Gantt
+   Design-only layer. Existing data / JS behavior remains intact.
+   ========================================================= */
+:root{
+  --page-accent:#2f62e8;
+  --page-soft:#edf4ff;
+  --page-ink:#21478f;
+  --page-wash:#f7faff;
+  --gantt-grid:#e8edf5;
+  --gantt-grid-strong:#dbe3ef;
+}
+
+/* ---------- 3 team pages: make the active tab feel like a real page ---------- */
+.team-tabs{
+  display:grid!important;
+  grid-template-columns:repeat(3,1fr)!important;
+  gap:8px!important;
+  padding:8px!important;
+  margin:18px 0 0!important;
+  border:1px solid #dce5f2!important;
+  border-radius:18px!important;
+  background:#f4f7fb!important;
+  box-shadow:0 7px 20px rgba(33,60,100,.06)!important;
+}
+.team-tabs button,
+.team-tabs button[data-team="all"],
+.team-tabs button[data-team="team1"],
+.team-tabs button[data-team="team2"]{
+  min-height:48px!important;
+  width:100%!important;
+  border:1px solid transparent!important;
+  border-radius:12px!important;
+  background:transparent!important;
+  color:#718096!important;
+  font-size:13px!important;
+  font-weight:850!important;
+  letter-spacing:-.02em!important;
+  box-shadow:none!important;
+  transition:all .18s ease!important;
+}
+.team-tabs button:hover{transform:translateY(-1px)!important;background:#fff!important;color:#253653!important}
+.team-tabs button.active{
+  background:#fff!important;
+  color:var(--page-ink)!important;
+  border-color:#d7e1f0!important;
+  box-shadow:0 7px 16px rgba(38,65,110,.10), inset 0 2px 0 var(--page-accent)!important;
+}
+body[data-active-team="all"]{--page-accent:#596577;--page-soft:#eef1f5;--page-ink:#3d4756;--page-wash:#f8fafc}
+body[data-active-team="team1"]{--page-accent:#1fa88f;--page-soft:#e9f8f4;--page-ink:#116b5b;--page-wash:#f5fcfa}
+body[data-active-team="team2"]{--page-accent:#2f62e8;--page-soft:#edf4ff;--page-ink:#21478f;--page-wash:#f7faff}
+
+.team-page-hero{
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:15px;
+  min-height:88px;
+  margin:12px 0 16px;
+  padding:16px 20px;
+  border:1px solid #dce5f2;
+  border-radius:18px;
+  overflow:hidden;
+  background:linear-gradient(135deg,#fff 0%,var(--page-wash) 68%,var(--page-soft) 100%);
+  box-shadow:0 10px 28px rgba(29,54,95,.07);
+}
+.team-page-hero:before{
+  content:"";
+  position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--page-accent);
+}
+.team-page-hero:after{
+  content:"";
+  position:absolute;width:180px;height:180px;right:-80px;top:-105px;border-radius:50%;
+  background:var(--page-soft);opacity:.9;
+}
+.team-page-icon{
+  position:relative;z-index:1;
+  width:52px;height:52px;flex:0 0 52px;
+  display:grid;place-items:center;
+  border-radius:15px;
+  color:#fff;
+  background:linear-gradient(145deg,var(--page-accent),var(--page-ink));
+  font-size:12px;font-weight:950;letter-spacing:.06em;
+  box-shadow:0 8px 18px color-mix(in srgb,var(--page-accent) 25%,transparent);
+}
+.team-page-copy{position:relative;z-index:1;min-width:0}
+.team-page-kicker{font-size:9.5px;letter-spacing:.14em;font-weight:950;color:var(--page-accent);margin-bottom:3px}
+.team-page-copy h2{margin:0!important;font-size:19px!important;line-height:1.2!important;color:#18263b!important;letter-spacing:-.04em!important}
+.team-page-copy p{margin:5px 0 0!important;color:#718096!important;font-size:11.5px!important;line-height:1.45!important}
+.team-page-stats{position:relative;z-index:1;margin-left:auto;display:flex;align-items:center;gap:8px;white-space:nowrap;color:#8a96a8;font-size:10px;font-weight:700}
+.team-page-stats b{color:var(--page-ink);font-size:11px}
+.team-page-dot{color:var(--page-accent);font-size:8px}
+
+@media(max-width:900px){
+  .team-page-hero{padding:14px 15px}
+  .team-page-stats{display:none}
+  .team-page-copy h2{font-size:17px!important}
+}
+
+@media(max-width:620px){
+  .team-tabs{gap:5px!important;padding:5px!important}
+  .team-tabs button{font-size:11px!important;min-height:44px!important}
+  .team-page-icon{width:44px;height:44px;flex-basis:44px;font-size:10px}
+  .team-page-copy p{font-size:10.5px!important}
+}
+
+</style>
+<style id="premium-v2-upgrade">
+/* ===== PREMIUM DASHBOARD V2 — hierarchy / infographic / gantt upgrade ===== */
+:root{
+  --paper:#f3f6fb;--card:#ffffff;--ink:#172033;--ink-muted:#68758a;--line:#e3e8f1;
+  --line-strong:#cbd4e2;--accent:#2f62e8;--accent-ink:#173b9a;--accent-soft:#edf3ff;
+  --green:#18a875;--green-soft:#eaf9f3;--amber:#e7a52b;--amber-soft:#fff7e5;
+  --danger:#e35b63;--purple:#7658d9;--purple-soft:#f1edff;
+  --sh-1:0 2px 8px rgba(27,48,84,.05);--sh-2:0 10px 28px rgba(27,48,84,.08);--sh-3:0 18px 50px rgba(27,48,84,.12)
+}
+html{scroll-behavior:smooth}
+body{background:radial-gradient(circle at 8% 0%,#eaf1ff 0,transparent 28%),radial-gradient(circle at 92% 8%,#edf9f6 0,transparent 24%),var(--paper)!important;color:var(--ink)}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.32;background-image:linear-gradient(rgba(47,98,232,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(47,98,232,.025) 1px,transparent 1px);background-size:32px 32px;mask-image:linear-gradient(to bottom,black,transparent 72%);z-index:-1}
+header{position:relative!important;border:1px solid rgba(255,255,255,.85)!important;border-radius:24px!important;background:rgba(255,255,255,.88)!important;backdrop-filter:blur(18px);box-shadow:var(--sh-3)!important;padding:22px 24px!important;margin-bottom:18px!important;overflow:hidden}
+header:after{content:"";position:absolute;right:-80px;top:-120px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,#dfeaff 0,#eef4ff 48%,transparent 70%);pointer-events:none}
+header h1{font-size:25px!important;letter-spacing:-.045em!important;position:relative;z-index:1} header p{position:relative;z-index:1}
+.team-tabs{background:#f5f7fb!important;border:1px solid var(--line)!important;border-radius:14px!important;padding:4px!important;gap:4px!important;box-shadow:inset 0 1px 2px rgba(20,35,60,.04)}
+.team-tab{border-radius:10px!important;padding:8px 13px!important}.team-tab.active{box-shadow:0 4px 12px rgba(47,98,232,.18)!important}
+.sec-nav{border:1px solid var(--line)!important;background:rgba(255,255,255,.9)!important;box-shadow:0 8px 24px rgba(27,48,84,.07)!important;border-radius:15px!important;padding:6px!important;backdrop-filter:blur(14px)}
+.sec-nav a{border-radius:9px!important;font-weight:700!important;color:#647188!important}.sec-nav a:hover,.sec-nav a.active{background:#edf3ff!important;color:#2455cf!important}
+.panel{border:1px solid var(--line)!important;border-radius:20px!important;background:rgba(255,255,255,.94)!important;box-shadow:var(--sh-2)!important;padding:20px!important;position:relative;overflow:hidden}
+.panel:before{content:"";position:absolute;left:0;top:0;width:100%;height:3px;background:linear-gradient(90deg,#2f62e8,#68a0ff,#4bc9a1);opacity:.75}
+.panel h2{font-size:16px!important;letter-spacing:-.025em!important;margin-bottom:14px!important}.panel h3{letter-spacing:-.02em}
+.metric,.kpi-card,.stat-card{border:1px solid var(--line)!important;border-radius:18px!important;background:linear-gradient(180deg,#fff,#f9fbff)!important;box-shadow:var(--sh-1)!important}
+.metric:hover,.kpi-card:hover,.stat-card:hover{transform:translateY(-2px);box-shadow:var(--sh-2)!important;border-color:#cbd9f3!important}
+button{border-radius:10px!important;font-weight:700!important;transition:transform .12s,box-shadow .12s,background .12s!important}button:hover{transform:translateY(-1px)}
+input,select,textarea{border-radius:10px!important;border-color:#d6deea!important;background:#fbfcfe!important}input:focus,select:focus,textarea:focus{border-color:#78a0ee!important;box-shadow:0 0 0 4px #edf3ff!important;outline:none}
+table{border:1px solid var(--line)!important;border-radius:14px!important;overflow:hidden;box-shadow:var(--sh-1)!important}th{background:#f5f8fd!important;color:#58667b!important;font-size:11px!important;text-transform:uppercase;letter-spacing:.045em}td{border-color:#edf0f5!important}tbody tr:hover{background:#f7faff!important}
+.badge,.chip{border-radius:999px!important;font-weight:750!important}
+.progress-bar{height:8px!important;border-radius:99px!important;background:#e8edf5!important}.progress-bar>div{border-radius:99px!important;background:linear-gradient(90deg,#2f62e8,#66a2ff)!important}
+/* infographic section accents */
+#sec-portfolio:before,#sec-priority:before,#sec-owner:before,#sec-list:before,#sec-pipeline:before,#sec-timeline:before{background:linear-gradient(90deg,#2f62e8,#7b63d8,#36b88c)!important}
+/* ===== GANTT ===== */
+.timeline-panel{padding:22px!important;background:linear-gradient(180deg,#f7faff 0,#fff 180px)!important;border:1px solid #dfe6f1!important;border-top:0!important;box-shadow:var(--sh-3)!important}
+.timeline-panel h2{display:flex;align-items:center;gap:10px}.timeline-panel h2:before{content:"TIMELINE";font-size:9px;letter-spacing:.13em;color:#2f62e8;background:#eaf1ff;padding:5px 7px;border-radius:6px;font-weight:900}
+.wg-wrap{margin-top:16px!important;border:1px solid #dbe3ef!important;border-radius:16px!important;box-shadow:0 12px 30px rgba(30,55,95,.08)!important;overflow:auto!important;background:#fff!important}
+.wg-row{min-height:48px!important;position:relative}.wg-row:not(.wg-header):nth-of-type(even){background:#fbfcfe!important}.wg-row:not(.wg-header):hover{background:#f1f6ff!important}
+.wg-label{width:225px!important;min-width:225px!important;padding:10px 15px!important;border-right:1px solid #dfe5ef!important;border-left:4px solid transparent!important;font-size:12px!important}.wg-row:not(.wg-header):hover .wg-label{border-left-color:#4d7df0!important}
+.wg-header{min-height:54px!important;position:sticky;top:0;z-index:5}.wg-header .wg-label{background:linear-gradient(180deg,#244ebf,#173b9a)!important}.wg-header .wg-cells{background:#244ebf!important}
+.wg-header .wg-cell{background:linear-gradient(180deg,#315fd4,#2147b4)!important;border-right-color:rgba(255,255,255,.22)!important;padding:9px 3px!important;font-size:10.5px!important}
+.wg-cells{min-width:720px!important;background-image:repeating-linear-gradient(90deg,transparent 0,transparent calc(100% / 12 - 1px),rgba(65,93,137,.10) calc(100% / 12 - 1px),rgba(65,93,137,.10) calc(100% / 12))}
+.wg-cell{border-right-color:#e9edf4!important;min-width:72px!important}.wg-row:not(.wg-header) .wg-cells:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,transparent 0,transparent 99%,rgba(47,98,232,.025) 100%)}
+.wg-bar{height:27px!important;border-radius:8px!important;padding:0 12px!important;font-size:10.5px!important;box-shadow:0 4px 10px rgba(30,55,95,.15),inset 0 1px 0 rgba(255,255,255,.28)!important}
+.wg-row:hover .wg-bar{transform:translateY(-50%) scaleY(1.04)!important}
+.wg-today-line{width:3px!important;background:repeating-linear-gradient(180deg,#e35b63 0 6px,transparent 6px 10px)!important;box-shadow:0 0 0 1px rgba(227,91,99,.08)}
+.wg-today-tag{background:#e35b63!important;border-radius:7px!important;padding:4px 7px!important;font-size:9px!important;font-weight:900!important;box-shadow:0 4px 10px rgba(227,91,99,.25)}
+/* gantt legend / empty */
+#d-gantt-empty{padding:18px!important;border-radius:12px!important;background:#f7f9fc!important;color:#7b8799!important}
+/* cards that contain charts / pipeline */
+#sec-pipeline .panel,#sec-timeline .panel{box-shadow:0 14px 34px rgba(27,48,84,.09)!important}
+/* sticky save bar */
+.save-bar,.sticky-save{border:1px solid #d7e1f2!important;background:rgba(255,255,255,.94)!important;backdrop-filter:blur(14px);box-shadow:0 -10px 30px rgba(27,48,84,.08)!important;border-radius:16px 16px 0 0!important}
+@media(max-width:800px){header{border-radius:0!important;margin-left:-12px!important;margin-right:-12px!important}.panel{border-radius:16px!important;padding:15px!important}.wg-label{width:175px!important;min-width:175px!important}.wg-cell{min-width:64px!important}.wg-cells{min-width:640px!important}}
+</style>
+<style id="premium-action-button-fix">
+/* ===== Header action buttons — balanced layout ===== */
+#list-view > .footer-actions:first-child{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto auto auto auto !important;
+  align-items:end !important;
+  column-gap:10px !important;
+  row-gap:10px !important;
+}
+#list-view > .footer-actions:first-child > div:first-child{
+  min-width:0 !important;
+  padding-right:18px !important;
+}
+#list-view > .footer-actions:first-child > button{
+  box-sizing:border-box !important;
+  height:42px !important;
+  min-height:42px !important;
+  margin:0 !important;
+  padding:0 16px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:7px !important;
+  white-space:nowrap !important;
+  line-height:1 !important;
+  font-size:12.5px !important;
+  letter-spacing:-.01em !important;
+  border-radius:11px !important;
+  flex-shrink:0 !important;
+}
+#list-view > .footer-actions:first-child > button:nth-of-type(1){
+  min-width:158px !important;
+}
+#list-view > .footer-actions:first-child > button:nth-of-type(2){
+  min-width:108px !important;
+}
+#list-view > .footer-actions:first-child > button:nth-of-type(3){
+  min-width:166px !important;
+}
+#list-view > .footer-actions:first-child > button:nth-of-type(4){
+  min-width:108px !important;
+}
+#list-view > .footer-actions:first-child > button.primary{
+  box-shadow:0 5px 14px rgba(49,94,246,.16) !important;
+}
+#list-view > .footer-actions:first-child > button:not(.primary){
+  background:#fff !important;
+  border-color:#d7dfeb !important;
+  color:#344054 !important;
+}
+#list-view > .footer-actions:first-child > button:not(.primary):hover{
+  background:#f7faff !important;
+  border-color:#9fb4d8 !important;
+  color:#2455cf !important;
+}
+@media (max-width:1100px){
+  #list-view > .footer-actions:first-child{
+    grid-template-columns:minmax(0,1fr) auto auto !important;
+  }
+  #list-view > .footer-actions:first-child > div:first-child{
+    grid-column:1 / -1 !important;
+    padding-right:0 !important;
+  }
+}
+@media (max-width:720px){
+  #list-view > .footer-actions:first-child{
+    grid-template-columns:1fr 1fr !important;
+  }
+  #list-view > .footer-actions:first-child > div:first-child{
+    grid-column:1 / -1 !important;
+  }
+  #list-view > .footer-actions:first-child > button,
+  #list-view > .footer-actions:first-child > button:nth-of-type(1),
+  #list-view > .footer-actions:first-child > button:nth-of-type(2),
+  #list-view > .footer-actions:first-child > button:nth-of-type(3),
+  #list-view > .footer-actions:first-child > button:nth-of-type(4){
+    min-width:0 !important;
+    width:100% !important;
+    padding:0 10px !important;
+  }
+}
+</style>
+<style id="button-layout-polish">
+/* ===== 상단 액션 버튼 균일화 ===== */
+#list-view > .footer-actions:first-child{
+  display:grid !important;
+  grid-template-columns:minmax(320px,1fr) repeat(4,170px) !important;
+  align-items:stretch !important;
+  gap:10px !important;
+  flex-wrap:nowrap !important;
+}
+#list-view > .footer-actions:first-child > div:first-child{
+  min-width:0 !important;
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+}
+#list-view > .footer-actions:first-child > button{
+  width:170px !important;
+  min-width:170px !important;
+  max-width:170px !important;
+  height:44px !important;
+  min-height:44px !important;
+  padding:0 12px !important;
+  margin:0 !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:7px !important;
+  box-sizing:border-box !important;
+  white-space:nowrap !important;
+  line-height:1 !important;
+  font-size:12.5px !important;
+  font-weight:700 !important;
+  border-radius:12px !important;
+}
+#list-view > .footer-actions:first-child > button:hover{
+  transform:translateY(-1px);
+}
+#list-view > .footer-actions:first-child > button:active{
+  transform:translateY(0);
+}
+@media (max-width:1250px){
+  #list-view > .footer-actions:first-child{
+    grid-template-columns:minmax(280px,1fr) repeat(4,158px) !important;
+    gap:8px !important;
+  }
+  #list-view > .footer-actions:first-child > button{
+    width:158px !important;
+    min-width:158px !important;
+    max-width:158px !important;
+    padding:0 8px !important;
+  }
+}
+@media (max-width:980px){
+  #list-view > .footer-actions:first-child{
+    grid-template-columns:1fr 1fr !important;
+  }
+  #list-view > .footer-actions:first-child > div:first-child{
+    grid-column:1 / -1 !important;
+  }
+  #list-view > .footer-actions:first-child > button{
+    width:100% !important;
+    min-width:0 !important;
+    max-width:none !important;
+  }
+}
+@media (max-width:560px){
+  #list-view > .footer-actions:first-child{
+    grid-template-columns:1fr !important;
+  }
+  #list-view > .footer-actions:first-child > button{
+    width:100% !important;
+  }
+}
+</style>
+<style id="premium-action-demo-v5">
+/* ===== V5: one-line equal action buttons ===== */
+#list-view > .footer-actions:first-child{
+  display:grid !important;
+  grid-template-columns:minmax(360px,1fr) repeat(4, 170px) !important;
+  align-items:center !important;
+  gap:10px !important;
+  margin-bottom:10px !important;
+}
+#list-view > .footer-actions:first-child > div:first-child{min-width:0 !important}
+#list-view > .footer-actions:first-child > button{
+  width:170px !important;
+  min-width:170px !important;
+  max-width:170px !important;
+  height:44px !important;
+  min-height:44px !important;
+  padding:0 12px !important;
+  margin:0 !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:7px !important;
+  white-space:nowrap !important;
+  box-sizing:border-box !important;
+  border-radius:12px !important;
+  font-size:12.5px !important;
+  font-weight:800 !important;
+}
+#list-view > .footer-actions:first-child > button:hover{transform:translateY(-1px)}
+#list-view > .footer-actions:first-child > button.primary{box-shadow:0 8px 18px rgba(47,98,232,.16)!important}
+.preview-data-badge{
+  display:inline-flex;align-items:center;gap:7px;margin:0 0 14px;padding:7px 11px;
+  border:1px solid #d9e5fb;border-radius:999px;background:#f4f8ff;color:#315fb8;
+  font-size:11px;font-weight:800;letter-spacing:.01em;
+}
+.preview-data-badge:before{content:"";width:7px;height:7px;border-radius:50%;background:#4d8df7;box-shadow:0 0 0 4px #e4efff}
+@media(max-width:1180px){
+  #list-view > .footer-actions:first-child{grid-template-columns:minmax(280px,1fr) repeat(4, 148px)!important}
+  #list-view > .footer-actions:first-child > button{width:148px!important;min-width:148px!important;max-width:148px!important;font-size:11.5px!important;padding:0 8px!important}
+}
+@media(max-width:900px){
+  #list-view > .footer-actions:first-child{grid-template-columns:1fr 1fr!important}
+  #list-view > .footer-actions:first-child > div:first-child{grid-column:1/-1}
+  #list-view > .footer-actions:first-child > button{width:100%!important;min-width:0!important;max-width:none!important}
+}
+</style>
+<style id="premium-v7-nav-fix">
+/* V7: section shortcut navigation visibility fix — behavior unchanged */
+.sec-nav{
+  background:rgba(255,255,255,.96)!important;
+  border:1px solid #dbe3ef!important;
+  box-shadow:0 8px 24px rgba(27,48,84,.08)!important;
+}
+.sec-nav .sec-nav-label{color:#4f5f75!important}
+.sec-nav button{
+  color:#52627a!important;
+  background:#f4f7fb!important;
+  border:1px solid #dfe6f0!important;
+  box-shadow:none!important;
+  font-weight:750!important;
+}
+.sec-nav button:hover{
+  color:#2455cf!important;
+  background:#edf3ff!important;
+  border-color:#c9d8f5!important;
+  transform:translateY(-1px);
+}
+.sec-nav button.current{
+  color:#2455cf!important;
+  background:#eaf1ff!important;
+  border-color:#bcd0f6!important;
+  box-shadow:0 3px 10px rgba(47,98,232,.12)!important;
+}
+</style>
+<style id="app-feature-styles">
+/* 현황판 기능용 스타일 (요약 태그·간트 라벨·상세 고정 바 등) — 디자인 v7 위에 덧붙임 */
 /* 상태색 "진행 중" (화면 코드에서 사용) */
 :root{ --st-prog: var(--accent); }
 
@@ -1269,17 +1661,11 @@ tbody tr:hover td{
   .detail-topbar-name{display:none}
 }
 
-/* 상단 헤더 버튼 줄바꿈 보정 — 제목 오른쪽에 버튼 4개가 한 줄로 오도록 */
-#list-view > .footer-actions:first-child{
-  display:flex !important; flex-wrap:wrap; align-items:flex-end !important; column-gap:10px; row-gap:14px;
-}
-#list-view > .footer-actions:first-child > div:first-child{ flex:1 1 460px; }
-#list-view > .footer-actions:first-child > button{ flex:0 0 auto; white-space:nowrap; }
 </style>
 </head>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
-<body class="premium-dashboard">
+<body class="premium-dashboard" data-active-team="team2">
 
 <div id="list-view">
   <div class="footer-actions" style="margin-bottom:4px">
@@ -1301,6 +1687,20 @@ tbody tr:hover td{
     <button data-team="team1" onclick="setTeam('team1')">상품마케팅1팀</button>
     <button data-team="team2" onclick="setTeam('team2')">상품마케팅2팀</button>
   </div>
+
+  <section class="team-page-hero" id="team-page-hero" aria-label="현재 팀 페이지">
+    <div class="team-page-icon" id="team-page-icon">ALL</div>
+    <div class="team-page-copy">
+      <div class="team-page-kicker" id="team-page-kicker">TEAM OVERVIEW</div>
+      <h2 id="team-page-title">전체 현황</h2>
+      <p id="team-page-desc">1·2팀의 프로젝트를 한 화면에서 비교하고 전체 흐름을 확인합니다.</p>
+    </div>
+    <div class="team-page-stats">
+      <span><b id="team-page-label">상품마케팅팀 전체</b></span>
+      <span class="team-page-dot">●</span>
+      <span>현재 페이지</span>
+    </div>
+  </section>
 
   <nav class="sec-nav" id="sec-nav">
     <span class="sec-nav-label">바로가기</span>
@@ -7404,6 +7804,19 @@ function applyTeamAccent(){
 
 function applyTeamUI(){
   applyTeamAccent();
+  document.body.setAttribute('data-active-team', activeTeam);
+  // 팀 페이지 머리말 (디자인 v7)
+  const TEAM_PAGE_META = {
+    all:   {kicker:'TEAM OVERVIEW', title:'전체 현황', desc:'1·2팀의 프로젝트를 한 화면에서 비교하고 전체 흐름을 확인합니다.', icon:'ALL'},
+    team1: {kicker:'PRODUCT MARKETING 01', title:'상품마케팅1팀', desc:'1팀 프로젝트의 진행 단계, 일정, 담당자별 현황을 독립된 페이지처럼 확인합니다.', icon:'01'},
+    team2: {kicker:'PRODUCT MARKETING 02', title:'상품마케팅2팀', desc:'2팀 프로젝트의 진행 단계, 일정, 담당자별 현황을 독립된 페이지처럼 확인합니다.', icon:'02'}
+  };
+  const tpm = TEAM_PAGE_META[activeTeam] || TEAM_PAGE_META.team2;
+  const setTxt = (id, v)=>{ const el = document.getElementById(id); if(el) el.textContent = v; };
+  const hero = document.getElementById('team-page-hero');
+  if(hero) hero.dataset.team = activeTeam;
+  setTxt('team-page-kicker', tpm.kicker); setTxt('team-page-title', tpm.title);
+  setTxt('team-page-desc', tpm.desc); setTxt('team-page-icon', tpm.icon); setTxt('team-page-label', teamLabel());
   const rw = document.getElementById('reset-all-wrap');
   if(rw) renderResetAllButton(rw);
   const tabs = document.getElementById('team-tabs');
