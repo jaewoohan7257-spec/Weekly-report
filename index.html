@@ -4933,11 +4933,16 @@ function weeklyChangeMap(){
 function renderKeepingView(anchorId){
   const el = document.getElementById(anchorId);
   const before = (el && el.getBoundingClientRect) ? el.getBoundingClientRect().top : null;
+  // 다시 그리는 동안 높이가 잠깐 줄어 브라우저가 스크롤을 옮기지 않도록 현재 높이를 붙잡아 둔다
+  const body = document.body;
+  body.style.minHeight = document.documentElement.scrollHeight + 'px';
   render();
   if(before !== null && el && el.getBoundingClientRect){
     const delta = el.getBoundingClientRect().top - before;
-    if(delta) window.scrollBy(0, delta);
+    // 페이지 전체의 '부드러운 스크롤' 설정 때문에 보정 이동이 애니메이션으로 보이지 않도록 즉시 이동
+    if(delta) instantScroll(()=> window.scrollBy({top: delta, left: 0, behavior: 'instant'}));
   }
+  requestAnimationFrame(()=>{ body.style.minHeight = ''; });
 }
 
 // 중요도 상위 안건 목록
