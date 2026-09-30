@@ -1220,6 +1220,24 @@ tbody tr:hover td{
 /* 상태색 "진행 중" (화면 코드에서 사용) */
 :root{ --st-prog: var(--accent); }
 
+/* 목록 요약 칸 (최신순 · 태그 · 업데이트 경과) */
+.memo-sum{font-size:12.5px;line-height:1.5}
+.memo-item{display:flex;gap:8px;align-items:baseline;margin-bottom:4px}
+.memo-item.older{opacity:.85}
+.memo-date{flex:0 0 38px;font-size:11.5px;font-weight:700;color:var(--ink-muted);font-variant-numeric:tabular-nums}
+.memo-text{color:var(--ink);word-break:keep-all;overflow-wrap:anywhere}
+.memo-tag{display:inline-block;font-size:10.5px;font-weight:700;padding:0 6px;border-radius:5px;line-height:17px;vertical-align:1px}
+.memo-tag.t-done{color:#087457;background:#E9F8F3}
+.memo-tag.t-prog{color:#2146C7;background:#EEF3FF}
+.memo-tag.t-plan{color:#9A650B;background:#FFF5DE}
+.memo-tag.t-warn{color:#B42318;background:#FFF0F0}
+.memo-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;padding-top:5px;border-top:1px dashed var(--line)}
+.memo-more{border:none;background:none;box-shadow:none;padding:0;font-size:11.5px;font-weight:600;color:var(--accent)}
+.memo-more:hover{background:none;text-decoration:underline}
+.memo-ago{font-size:11px;color:var(--ink-muted);margin-left:auto;white-space:nowrap}
+.memo-ago.stale{color:var(--danger);font-weight:700}
+.memo-empty{color:var(--ink-muted)}
+
 /* 간트: 짧은 막대의 날짜를 막대 바깥에 표시 */
 .wg-bar{min-width:12px}
 .wg-bar.is-short{padding:0}
@@ -2907,6 +2925,84 @@ function businessDaysInclusive(fromISO, toISO){
   return n;
 }
 
+
+// ===== 진행 메모 정리 (목록 요약·엑셀·PPT 공통) =====
+// 메모를 항목 단위로 나누고, (9/22) 같은 날짜를 읽어 최신순으로 정렬하고, 완료/진행/예정/주의 태그를 붙인다.
+// 원문은 그대로 저장되고 '보여주는 방식'만 바뀐다.
+const MEMO_TAGS = {
+  done: {label:'완료', fg:'#087457', bg:'#E9F8F3', argb:'FF087457'},
+  prog: {label:'진행', fg:'#2146C7', bg:'#EEF3FF', argb:'FF2146C7'},
+  plan: {label:'예정', fg:'#9A650B', bg:'#FFF5DE', argb:'FF9A650B'},
+  warn: {label:'주의', fg:'#B42318', bg:'#FFF0F0', argb:'FFB42318'}
+};
+// 한 문장에 '완료 후 ~예정'처럼 여러 신호가 있으면 문장 뒤쪽(가장 나중에 나온) 신호를 따른다. 주의 신호는 항상 우선.
+function memoTagOf(t){
+  if(/지연|보류|이슈|문제|불가|취소|차질|미정|누락|클레임|반려|연기/.test(t)) return 'warn';
+  const lastPos = re => { let m, pos = -1; const g = new RegExp(re.source, 'g'); while((m = g.exec(t))) pos = m.index; return pos; };
+  const cand = [
+    ['done', lastPos(/완료|확정|종료|전달함|공유함/)],
+    ['prog', lastPos(/진행\s?중|검토\s?중|작업\s?중|검수\s?중|협의\s?중|대기\s?중/)],
+    ['plan', lastPos(/예정|대기|필요|예상|추후|요청|계획/)]
+  ].filter(c => c[1] >= 0).sort((a,b)=> b[1] - a[1]);
+  if(!cand.length) return null;
+  // '대기중'은 진행과 예정 모두에 걸리므로 같은 위치면 진행으로
+  return cand[0][0];
+}
+function parseMemo(text, refISO){
+  const ref = parseLocalDate(refISO || todayISO());
+  const toISO = (m, d)=>{
+    let y = ref.getFullYear();
+    let dt = new Date(y, m-1, d);
+    if(dt - ref > 60*86400000) dt = new Date(y-1, m-1, d);   // 먼 미래로 읽히면 작년 날짜로 본다
+    return toDateStr(dt);
+  };
+  // 1) 줄 → ' / ' 구분 → 날짜가 각각 붙은 쉼표 구분까지 나눈다
+  const segs = [];
+  String(text || '').split(/\n/).forEach(line=>{
+    line = line.trim(); if(!line) return;
+    line.split(/\s+\/\s+/).forEach(part=>{
+      const pieces = part.split(/(?<=\))\s*,\s*(?=\S)/);
+      pieces.forEach(pc=>{ pc = pc.trim(); if(pc) segs.push(pc); });
+    });
+  });
+  // 2) 날짜 읽기 (9/22, (9/21~), 9월 22일)
+  let lastKey = '';
+  const items = segs.map((t, idx)=>{
+    let m = t.match(/(?:^|[^\d])(\d{1,2})\/(\d{1,2})(\s*~)?/) ;
+    let month, day, range = false;
+    if(m){ month = +m[1]; day = +m[2]; range = !!m[3]; }
+    else { const k = t.match(/(\d{1,2})월\s*(\d{1,2})일/); if(k){ month = +k[1]; day = +k[2]; } }
+    let date = null, label = '';
+    if(month >= 1 && month <= 12 && day >= 1 && day <= 31){
+      date = toISO(month, day); label = month + '/' + day + (range ? '~' : '');
+    }
+    // 괄호 안 날짜는 표시에서 빼고(날짜 칩으로 보여주므로) 문장만 남긴다
+    let clean = t.replace(/\(\s*\d{1,2}\/\d{1,2}\s*~?\s*\)/g, '')
+                 .replace(/^(?:[-–•·*]\s*)+/, '')                       // 앞머리 글머리표(-, •) 정리
+                 .replace(/^\d{1,2}\/\d{1,2}\s*~?\s*[:：.]?\s+/, '')     // 맨 앞 날짜는 날짜 칩과 중복이라 제거
+                 .replace(/\s{2,}/g,' ').trim();
+    if(!clean) clean = t;
+    // 오늘 이후 날짜는 '앞으로의 일정'이라 업데이트 순서 판단에는 쓰지 않는다
+    const future = date && date > toDateStr(ref);
+    const key = (date && !future) ? date : lastKey;   // 날짜 없는 줄은 바로 위 날짜 줄 다음에 쓴 것으로 본다
+    if(date && !future) lastKey = date;
+    let tag = memoTagOf(t);
+    if(!tag && future) tag = 'plan';
+    return {idx, date, label, text: clean, tag, key};
+  });
+  // 3) 최신순 (같은 날짜면 아래쪽에 쓴 것이 먼저)
+  items.sort((a,b)=> a.key === b.key ? b.idx - a.idx : (a.key < b.key ? 1 : -1));
+  return items;
+}
+function daysSinceISO(iso){
+  if(!iso) return null;
+  const d = new Date(iso); if(isNaN(d)) return null;
+  const t = parseLocalDate(todayISO());
+  const dd = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  return Math.max(0, Math.round((t - dd) / 86400000));
+}
+function updatedAgoText(n){ return n === null ? '' : (n === 0 ? '오늘 업데이트' : n + '일 전 업데이트'); }
+
 // ===== 중요도 산정 (등급 수동 × 긴급도 자동) =====
 const TIER_LABEL  = {key:'핵심', normal:'일반'};
 const TIER_WEIGHT = {key:1.6, normal:1.0};   // 핵심 등급은 가중치 1.6배
@@ -3294,6 +3390,57 @@ function fitGanttLabels(wrap){
 }
 window.addEventListener('resize', ()=>{ document.querySelectorAll('.wg-wrap').forEach(fitGanttLabels); });
 
+// 목록 '요약' 칸: 최신 3건 + 태그 + 날짜 칩, 나머지는 접기, 아래에 업데이트 경과
+const memoOpen = new Set();
+function renderMemoSummary(td, content, updatedAt, key){
+  td.innerHTML = '';
+  const items = parseMemo(content);
+  const box = document.createElement('div');
+  box.className = 'memo-sum';
+  if(!items.length){
+    const e = document.createElement('span'); e.className = 'memo-empty'; e.textContent = '—';
+    box.appendChild(e);
+  }
+  const SHOW = 3;
+  const open = memoOpen.has(key);
+  items.forEach((it, i)=>{
+    if(i >= SHOW && !open) return;
+    const row = document.createElement('div');
+    row.className = 'memo-item' + (i >= SHOW ? ' older' : '');
+    const d = document.createElement('span');
+    d.className = 'memo-date'; d.textContent = it.label || '';
+    const tx = document.createElement('span');
+    tx.className = 'memo-text'; tx.textContent = it.text;
+    if(it.tag){
+      const tg = document.createElement('span');
+      tg.className = 'memo-tag t-' + it.tag; tg.textContent = MEMO_TAGS[it.tag].label;
+      tx.appendChild(document.createTextNode(' ')); tx.appendChild(tg);
+    }
+    row.append(d, tx);
+    box.appendChild(row);
+  });
+  const foot = document.createElement('div');
+  foot.className = 'memo-foot';
+  if(items.length > SHOW){
+    const more = document.createElement('button');
+    more.type = 'button'; more.className = 'memo-more';
+    more.textContent = open ? '▴ 접기' : '▾ 이전 기록 ' + (items.length - SHOW) + '건 더 보기';
+    more.onclick = (ev)=>{ ev.stopPropagation(); open ? memoOpen.delete(key) : memoOpen.add(key); renderMemoSummary(td, content, updatedAt, key); };
+    foot.appendChild(more);
+  }
+  const n = daysSinceISO(updatedAt);
+  if(n !== null){
+    const ago = document.createElement('span');
+    ago.className = 'memo-ago' + (n >= 14 ? ' stale' : '');
+    ago.textContent = (n >= 14 ? '⚠ ' : '') + updatedAgoText(n);
+    ago.title = n >= 14 ? '2주 넘게 업데이트가 없어요' : '마지막 수정일 기준';
+    foot.appendChild(ago);
+  }
+  if(foot.childNodes.length) box.appendChild(foot);
+  td.appendChild(box);
+  td.title = content || '';
+}
+
 function renderGantt(proj){
   const ganttBox = document.getElementById('d-gantt');
   const emptyMsg = document.getElementById('d-gantt-empty');
@@ -3406,7 +3553,7 @@ function render(){
     const tr = document.createElement('tr');
     const isReviewed = (p.reviewedWeek === thisWeek);
     if(isReviewed) tr.className = 'reviewed-row';
-    const tdOwner = document.createElement('td'); tdOwner.textContent = p.owner;
+    const tdOwner = document.createElement('td'); tdOwner.textContent = p.owner; tdOwner.style.whiteSpace = 'nowrap';
     const tdName = document.createElement('td');
     const nameWrap = document.createElement('span');
     nameWrap.style.cssText = 'display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap';
@@ -3465,10 +3612,8 @@ function render(){
 
     const tdSummary = document.createElement('td');
     const curStep = p.steps.find(s=>s.stage===currentStageOf(p));
-    const summaryText = (curStep && curStep.content) ? curStep.content : '—';
-    tdSummary.textContent = summaryText;
-    tdSummary.style.cssText = 'color:var(--ink-soft);font-size:12.5px;max-width:340px;white-space:pre-wrap;word-break:break-word;line-height:1.5';
-    tdSummary.title = summaryText;
+    tdSummary.style.cssText = 'max-width:380px';
+    renderMemoSummary(tdSummary, curStep ? curStep.content : '', p.updatedAt, 'p' + p.id);
 
     const tdStatusLight = document.createElement('td');
     const isOverdueProj = p.steps.some(isOverdue);
@@ -3892,7 +4037,7 @@ function renderArchiveList(){
   archived.sort((a,b)=> (b.archivedAt||'').localeCompare(a.archivedAt||'')).forEach(p=>{
     const meta = STATUS_META[p.status] || STATUS_META.done;
     const tr = document.createElement('tr');
-    const tdOwner = document.createElement('td'); tdOwner.textContent = p.owner;
+    const tdOwner = document.createElement('td'); tdOwner.textContent = p.owner; tdOwner.style.whiteSpace = 'nowrap';
     const tdName = document.createElement('td');
     const link = document.createElement('button');
     link.className = 'link-btn'; link.textContent = p.name;
@@ -4518,11 +4663,20 @@ function projectToStyledRows(proj){
   // 프로젝트 헤더 행: 지금 진행 중인 단계의 내용을 잘리지 않게 전부 넣는다
   const curStage = currentStageOf(proj);
   const curStep = proj.steps.find(s=>s.stage === curStage);
+  // 지금 단계 메모를 최신순으로 정리하고 태그를 붙인다 (엑셀에서 태그는 색 글씨로 표시)
   let projSummary = '';
-  if(curStep && curStep.content){
-    // 줄바꿈은 살려두되 앞뒤 공백만 정리 (엑셀 셀에서 줄바꿈으로 표시됨)
-    projSummary = curStep.content
-      .split(/\n/).map(t=>t.trim()).filter(Boolean).join('\n');
+  const memoItems = (curStep && curStep.content) ? parseMemo(curStep.content) : [];
+  if(memoItems.length){
+    const rich = [];
+    memoItems.forEach((it, i)=>{
+      if(i) rich.push({text:'\n'});
+      if(it.label) rich.push({text: it.label + '  ', font:{bold:true, color:{argb:'FF667085'}}});
+      rich.push({text: it.text});
+      if(it.tag) rich.push({text: '  [' + MEMO_TAGS[it.tag].label + ']', font:{bold:true, color:{argb: MEMO_TAGS[it.tag].argb}}});
+    });
+    const n = daysSinceISO(proj.updatedAt);
+    if(n !== null) rich.push({text: '\n— ' + updatedAgoText(n) + (n >= 14 ? ' (2주 이상 미갱신)' : ''), font:{italic:true, color:{argb: n >= 14 ? 'FFB42318' : 'FF98A2B3'}}});
+    projSummary = {richText: rich};
   }
   // 내용이 없으면 진행률로 대체
   if(!projSummary) projSummary = '진행률 ' + progressOf(proj) + '%';
@@ -6122,7 +6276,8 @@ async function generateReportPPT(btn){
           fontSize:fs(15), bold:true, color:lv, align:'right', valign:'middle', fontFace:PPT_FONT});
 
         // 담당자 / 단계 / 진행률
-        sk.addText(p.owner + '  ·  ' + (STAGE_LABEL[currentStageOf(p)]||'') + '  ·  진행률 ' + progressOf(p) + '%', {
+        const agoN = daysSinceISO(p.updatedAt);
+        sk.addText(p.owner + '  ·  ' + (STAGE_LABEL[currentStageOf(p)]||'') + '  ·  진행률 ' + progressOf(p) + '%' + (agoN !== null ? '  ·  ' + updatedAgoText(agoN) : ''), {
           x:pad+0.48, y:cy+0.38, w:contentW-0.6, h:0.24,
           fontSize:fs(9.5), color:MUTED_C, valign:'middle', fontFace:PPT_FONT});
 
@@ -6140,6 +6295,21 @@ async function generateReportPPT(btn){
             fontFace:PPT_FONT, wrap:false});
           bx += bw + 0.08;
         });
+
+        // 최근 진행 메모 1건 (최신순 정리의 첫 항목) — 배지 오른쪽 남는 폭에 한 줄로
+        const cStep = p.steps.find(s=>s.stage===currentStageOf(p));
+        const latest = cStep && cStep.content ? parseMemo(cStep.content)[0] : null;
+        if(latest){
+          const lx = bx + 0.1, lw = pad + contentW - 0.18 - lx;
+          if(lw > 1.2){
+            const tagTxt = latest.tag ? '[' + MEMO_TAGS[latest.tag].label + '] ' : '';
+            const fit = fitOneLine('최근 ' + (latest.label ? latest.label + ' ' : '') + latest.text, fs(9.5), 8, lw - (tagTxt ? 0.45 : 0), false);
+            const runs = [];
+            if(tagTxt) runs.push({text: tagTxt, options:{bold:true, color: hexNoHash(MEMO_TAGS[latest.tag].fg, '#475467')}});
+            runs.push({text: fit.text, options:{color: SOFT_C}});
+            sk.addText(runs, {x:lx, y:cy+0.66, w:lw, h:0.24, fontSize:fit.size, valign:'middle', align:'right', fontFace:PPT_FONT, wrap:false});
+          }
+        }
 
         cy += cardH + gap;
       });
