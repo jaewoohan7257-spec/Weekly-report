@@ -667,11 +667,570 @@
   .cmp-field-val .txt-after{background:var(--forest-soft);color:var(--ink)}
   .cmp-added{border-left:3px solid var(--forest)}
   .cmp-removed{border-left:3px solid var(--danger)}
+
+
+/* =========================================================
+   PREMIUM DASHBOARD THEME
+   - 기능/데이터/JS는 유지하고 UI 레이어만 재설계
+   ========================================================= */
+:root{
+  --ink:#172033;
+  --ink-soft:#667085;
+  --ink-muted:#98A2B3;
+  --paper:#F4F6F8;
+  --card:#FFFFFF;
+  --line:#E7EAF0;
+  --line-strong:#D8DEE8;
+  --accent:#315EF6;
+  --accent-soft:#EEF3FF;
+  --accent-ink:#2146C7;
+  --amber:#D99016;
+  --amber-soft:#FFF5DE;
+  --amber-ink:#9A650B;
+  --forest:#159570;
+  --forest-soft:#E9F8F3;
+  --forest-ink:#087457;
+  --slate:#667085;
+  --slate-soft:#F0F2F5;
+  --slate-ink:#475467;
+  --danger:#D84A4A;
+  --danger-soft:#FFF0F0;
+  --t0:#667085; --t0-soft:#F0F2F5; --t0-ink:#344054;
+  --t1:#0E8F83; --t1-soft:#E8F8F5; --t1-ink:#08665E;
+  --t2:#315EF6; --t2-soft:#EEF3FF; --t2-ink:#2146C7;
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px; --sp-7:48px;
+  --r-sm:8px; --r-md:12px; --r-lg:18px; --r-pill:999px;
+  --sh-1:0 1px 2px rgba(16,24,40,.03);
+  --sh-2:0 4px 14px rgba(16,24,40,.055);
+  --sh-3:0 14px 36px rgba(16,24,40,.09);
+  --sans:"Pretendard","YoonGothic",-apple-system,BlinkMacSystemFont,"Segoe UI","Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+
+html{
+  background:var(--paper);
+  scroll-behavior:smooth;
+}
+body{
+  max-width:1500px;
+  margin:0 auto;
+  padding:0 34px 56px;
+  background:
+    radial-gradient(900px 420px at 92% -8%, rgba(49,94,246,.075), transparent 62%),
+    radial-gradient(700px 360px at -8% 12%, rgba(21,149,112,.035), transparent 62%),
+    var(--paper);
+  color:var(--ink);
+  font-family:var(--sans);
+}
+body::before{
+  height:4px;
+  background:linear-gradient(90deg,#2146C7 0%,#315EF6 50%,#6D7FF2 100%);
+}
+
+/* ---------- top header ---------- */
+#list-view > .footer-actions:first-child{
+  position:relative;
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:end !important;
+  gap:22px;
+  margin:0 -34px 20px !important;
+  padding:38px 34px 30px;
+  background:rgba(255,255,255,.86);
+  border-bottom:1px solid var(--line);
+  box-shadow:0 4px 24px rgba(16,24,40,.025);
+}
+#list-view > .footer-actions:first-child > div:first-child{
+  min-width:0;
+}
+.eyebrow{
+  font-size:10px;
+  letter-spacing:.16em;
+  font-weight:800;
+  color:var(--accent);
+  margin-bottom:9px;
+}
+.eyebrow::before{
+  width:22px;
+  height:2px;
+  background:var(--accent);
+}
+h1{
+  font-size:34px;
+  line-height:1.14;
+  letter-spacing:-.04em;
+  color:#14213D;
+}
+#page-title{
+  margin-bottom:8px;
+}
+.sub{
+  color:#667085;
+  font-size:13px;
+  line-height:1.7;
+}
+#list-view > .footer-actions:first-child > button{
+  align-self:end;
+}
+#list-view > .footer-actions:first-child > button.primary{
+  margin-left:0;
+}
+#list-view > .footer-actions:first-child > button:not(.primary){
+  background:#fff;
+}
+
+/* ---------- utility rows ---------- */
+#new-overdue-banner{
+  margin-bottom:12px;
+}
+.status-msg{
+  color:var(--ink-muted);
+  line-height:1.55;
+}
+.footer-actions{
+  gap:12px;
+}
+button{
+  border-radius:9px;
+  border-color:var(--line-strong);
+  background:#fff;
+  box-shadow:var(--sh-1);
+}
+button:hover{
+  border-color:#AEB8C8;
+  color:var(--accent-ink);
+  box-shadow:var(--sh-2);
+}
+button.primary{
+  background:linear-gradient(135deg,#3B67F7,#2146C7);
+  border-color:#2146C7;
+  box-shadow:0 5px 14px rgba(49,94,246,.20);
+}
+button.primary:hover{
+  filter:brightness(1.04);
+  box-shadow:0 8px 20px rgba(49,94,246,.25);
+}
+
+/* ---------- team switcher ---------- */
+.team-tabs{
+  display:inline-flex;
+  gap:4px;
+  margin:4px 0 18px;
+  padding:4px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#ECEFF3;
+}
+.team-tabs button,
+.team-tabs button[data-team="all"],
+.team-tabs button[data-team="team1"],
+.team-tabs button[data-team="team2"]{
+  margin:0;
+  padding:9px 18px;
+  border:0;
+  border-radius:9px;
+  background:transparent;
+  color:#667085;
+  font-size:12.5px;
+}
+.team-tabs button.active,
+.team-tabs button[data-team="all"].active,
+.team-tabs button[data-team="team1"].active,
+.team-tabs button[data-team="team2"].active{
+  background:#fff;
+  color:#182230;
+  border:0;
+  box-shadow:0 2px 8px rgba(16,24,40,.08);
+}
+
+/* ---------- section nav ---------- */
+.sec-nav{
+  position:sticky;
+  top:10px;
+  z-index:50;
+  gap:6px;
+  margin-bottom:22px;
+  padding:9px 12px;
+  border-radius:14px;
+  background:rgba(22,32,51,.94);
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 10px 28px rgba(16,24,40,.16);
+  backdrop-filter:blur(12px);
+}
+.sec-nav-label{
+  font-size:10px;
+  letter-spacing:.12em;
+  margin-right:7px;
+}
+.sec-nav-label::before{content:'≡';}
+.sec-nav button{
+  padding:6px 11px;
+  font-size:11px;
+  border-radius:999px;
+  background:rgba(255,255,255,.07);
+  border-color:rgba(255,255,255,.12);
+}
+.sec-nav button:hover{
+  background:rgba(255,255,255,.16);
+}
+.sec-nav button.current{
+  color:#14213D;
+  background:#fff;
+}
+
+/* ---------- panels ---------- */
+.panel{
+  position:relative;
+  background:rgba(255,255,255,.96);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:24px;
+  margin-bottom:18px;
+  box-shadow:var(--sh-2);
+}
+.panel:hover{
+  border-color:#DEE3EB;
+}
+.panel h2{
+  margin-bottom:16px;
+  font-size:16px;
+  letter-spacing:-.025em;
+}
+.panel h2::before{
+  width:4px;
+  height:17px;
+  border-radius:4px;
+  background:var(--accent);
+}
+.panel h2 .collapse-hint{
+  font-size:10px;
+}
+
+/* ---------- KPI ---------- */
+.metrics{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+  margin-bottom:18px;
+}
+.metric{
+  min-height:126px;
+  padding:21px 22px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:#fff;
+  box-shadow:var(--sh-2);
+}
+.metric::before{
+  width:4px;
+  background:linear-gradient(180deg,#315EF6,#2146C7);
+}
+.metric:nth-child(2)::before{background:linear-gradient(180deg,#6B7FF2,#315EF6)}
+.metric:nth-child(3)::before{background:linear-gradient(180deg,#F0B44B,#D99016)}
+.metric:nth-child(4)::before{background:linear-gradient(180deg,#31B38F,#159570)}
+.metric .label{
+  font-size:10px;
+  color:#98A2B3;
+  letter-spacing:.08em;
+}
+.metric .value{
+  margin-top:12px;
+  font-size:32px;
+  color:#182230;
+  letter-spacing:-.04em;
+}
+
+/* ---------- filters / inputs ---------- */
+input,select,textarea{
+  border-color:var(--line-strong);
+  background:#fff;
+  border-radius:9px;
+}
+input:hover,select:hover,textarea:hover{border-color:#B7C0CE}
+input:focus,select:focus,textarea:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(49,94,246,.10);
+}
+.filters{
+  gap:7px;
+}
+.filter-btn{
+  background:#F7F8FA;
+  border-color:var(--line);
+}
+.filter-btn.active{
+  background:var(--accent);
+  border-color:var(--accent);
+  box-shadow:0 4px 10px rgba(49,94,246,.16);
+}
+
+/* ---------- portfolio / cards ---------- */
+.pf-grid,.sg-grid{
+  gap:12px;
+}
+.pf-card,.sg-card,.owner-card,.cmp-card,.st-row,.pr-item{
+  background:#FBFCFD;
+  border-color:var(--line);
+  border-radius:12px;
+}
+.pf-card{
+  padding:16px;
+}
+.pf-value{
+  font-size:27px;
+}
+.sg-card{
+  padding:15px 16px;
+}
+.owner-grid{
+  gap:14px;
+}
+.owner-card{
+  padding:18px 20px;
+  box-shadow:var(--sh-1);
+}
+.owner-card:hover{
+  transform:translateY(-2px);
+  box-shadow:var(--sh-3);
+}
+.owner-card.selected{
+  background:var(--accent-soft);
+  border-color:var(--accent);
+}
+
+/* ---------- priority ---------- */
+.pr-item{
+  padding:13px 16px;
+  margin-bottom:8px;
+}
+.pr-item:hover{
+  transform:translateX(3px);
+  box-shadow:var(--sh-2);
+}
+.pr-rank{
+  font-size:12px;
+  color:#98A2B3;
+}
+.pr-score{
+  font-size:16px;
+}
+
+/* ---------- tables ---------- */
+table{
+  border-spacing:0;
+}
+th{
+  padding:0 10px 11px;
+  color:#98A2B3;
+  font-size:9.5px;
+  border-bottom:1px solid var(--line-strong);
+}
+td{
+  padding:12px 10px;
+  border-bottom:1px solid #EEF0F3;
+}
+tbody tr:hover td{
+  background:#F7F9FC;
+}
+.overdue-row td{background:#FFF6F5}
+.upcoming-row td{background:#FFFBF1}
+
+/* ---------- badges / chips ---------- */
+.badge,.pr-tag,.team-badge,.nodate-tag,.st-badge{
+  border:1px solid transparent;
+}
+.chip{
+  padding:7px 12px;
+  border-color:var(--line);
+  background:#fff;
+  box-shadow:var(--sh-1);
+}
+.chip:hover{
+  border-color:#AFC0F7;
+  box-shadow:var(--sh-2);
+}
+.badge{
+  font-size:10px;
+}
+
+/* ---------- pipeline ---------- */
+#pipeline-rows{
+  margin-left:8px;
+  padding-left:30px;
+}
+#pipeline-rows::before{
+  left:6px;
+  background:linear-gradient(180deg,#315EF6,#D9DFEA 72%,transparent);
+}
+.stage-row{
+  padding:13px 0;
+}
+.stage-label{
+  width:165px;
+  color:#475467;
+}
+.stage-marker{
+  left:-30px;
+  width:12px;
+  height:12px;
+  border-color:#CBD3DF;
+}
+.stage-row.has-items .stage-marker{
+  border-color:var(--accent);
+  background:var(--accent);
+  box-shadow:0 0 0 4px var(--accent-soft);
+}
+
+/* ---------- timeline ---------- */
+.timeline-panel{
+  border-top:3px solid var(--accent);
+  background:linear-gradient(180deg,#F4F7FF 0,#fff 150px);
+}
+.wg-wrap{
+  border-radius:14px;
+  box-shadow:var(--sh-2);
+}
+.wg-label{
+  width:195px;
+  padding:11px 15px;
+}
+.wg-header .wg-label,
+.wg-header .wg-cell{
+  background:linear-gradient(180deg,#315EF6,#2146C7);
+}
+.wg-bar{
+  height:25px;
+  box-shadow:0 3px 8px rgba(16,24,40,.13),inset 0 1px 0 rgba(255,255,255,.25);
+}
+.wg-today-tag{
+  box-shadow:0 3px 10px rgba(216,74,74,.2);
+}
+
+/* ---------- storage / snapshots / compare ---------- */
+.st-bar{
+  height:14px;
+}
+.st-row{
+  padding:9px 12px;
+}
+.cmp-card{
+  padding:15px 17px;
+}
+.cmp-insight{
+  border-radius:9px;
+}
+
+/* ---------- save bar ---------- */
+.save-bar{
+  border-radius:13px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.96);
+  box-shadow:0 8px 28px rgba(16,24,40,.10);
+  backdrop-filter:blur(10px);
+}
+.save-bar.has-unsaved{
+  background:#FFF7F7;
+}
+
+/* ---------- detail view ---------- */
+#detail-view{
+  max-width:1180px;
+  margin:34px auto 0;
+}
+#detail-view > h1{
+  font-size:34px;
+}
+#detail-view .panel{
+  margin-bottom:16px;
+}
+
+/* ---------- floating scroll ---------- */
+.scroll-fab button{
+  background:rgba(255,255,255,.96);
+  border-color:var(--line);
+  box-shadow:var(--sh-2);
+}
+.scroll-fab button:hover{
+  background:var(--accent);
+}
+
+/* ---------- subtle section rhythm ---------- */
+#sec-portfolio,#sec-priority,#sec-owner,#sec-list,#sec-archive,#sec-pipeline,#sec-timeline,#sec-duration,#sec-storage,#sec-snapshot,#sec-compare{
+  scroll-margin-top:88px;
+}
+
+/* ---------- responsive ---------- */
+@media (max-width:1100px){
+  body{padding:0 20px 44px}
+  #list-view > .footer-actions:first-child{
+    margin-left:-20px !important;
+    margin-right:-20px !important;
+    padding-left:20px;
+    padding-right:20px;
+  }
+  .metrics{grid-template-columns:repeat(2,1fr)}
+  .sec-nav{top:6px}
+}
+@media (max-width:760px){
+  body{padding:0 12px 32px}
+  #list-view > .footer-actions:first-child{
+    grid-template-columns:1fr;
+    margin-left:-12px !important;
+    margin-right:-12px !important;
+    padding:28px 16px 22px;
+  }
+  h1,#detail-view > h1{font-size:27px}
+  .metrics{grid-template-columns:1fr 1fr}
+  .metric{min-height:108px;padding:17px}
+  .metric .value{font-size:27px}
+  .team-tabs{
+    display:flex;
+    width:100%;
+    overflow-x:auto;
+  }
+  .team-tabs button{flex:1;white-space:nowrap}
+  .sec-nav{
+    overflow-x:auto;
+    flex-wrap:nowrap;
+    white-space:nowrap;
+  }
+  .sec-nav-label{flex-shrink:0}
+  .panel{padding:18px 15px;border-radius:15px}
+  .owner-grid{grid-template-columns:1fr}
+  .add-row{grid-template-columns:1fr !important}
+  .wg-label{width:125px}
+}
+@media (max-width:520px){
+  .metrics{grid-template-columns:1fr}
+  .metric{min-height:96px}
+  .metric .value{margin-top:8px}
+  .panel{padding:15px 12px}
+  table{font-size:12px}
+  th,td{padding-left:6px;padding-right:6px}
+}
+
+/* ---------- reduced motion ---------- */
+@media (prefers-reduced-motion:reduce){
+  *,*:before,*:after{
+    scroll-behavior:auto !important;
+    transition:none !important;
+  }
+}
+
+
+/* 상태색 "진행 중" (화면 코드에서 사용) */
+:root{ --st-prog: var(--accent); }
+
+/* 상단 헤더 버튼 줄바꿈 보정 — 제목 오른쪽에 버튼 4개가 한 줄로 오도록 */
+#list-view > .footer-actions:first-child{
+  display:flex !important; flex-wrap:wrap; align-items:flex-end !important; column-gap:10px; row-gap:14px;
+}
+#list-view > .footer-actions:first-child > div:first-child{ flex:1 1 460px; }
+#list-view > .footer-actions:first-child > button{ flex:0 0 auto; white-space:nowrap; }
 </style>
 </head>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
-<body>
+<body class="premium-dashboard">
 
 <div id="list-view">
   <div class="footer-actions" style="margin-bottom:4px">
@@ -961,13 +1520,13 @@
       <h2 style="margin:0">단계별 상세 (수정 시 자동 저장)</h2>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <select id="recalc-anchor" style="width:auto">
-          <option value="STEP.2">STEP.2부터 전체 재계산</option>
-          <option value="STEP.4">STEP.4부터 재계산</option>
-          <option value="STEP.4-1">STEP.4-1부터 재계산</option>
-          <option value="STEP.5">STEP.5부터 재계산</option>
-          <option value="STEP.6">STEP.6부터 재계산 (GATE 3만)</option>
+          <option value="STEP.2">STEP.2 마감일 기준 → STEP.3 ~ GATE 3 변경</option>
+          <option value="STEP.4">STEP.4 마감일 기준 → STEP.4-1 ~ GATE 3 변경</option>
+          <option value="STEP.4-1">STEP.4-1 마감일 기준 → STEP.5 ~ GATE 3 변경</option>
+          <option value="STEP.5">STEP.5 마감일 기준 → STEP.6 · GATE 3 변경</option>
+          <option value="STEP.6">STEP.6 마감일 기준 → GATE 3만 변경</option>
         </select>
-        <button id="recalc-btn" onclick="forceRecalc(this)">🔄 리드타임 재계산</button>
+        <button id="recalc-btn" onclick="forceRecalc(this)">🔄 일정 재계산</button>
         <span class="recalc-msg" id="recalc-msg"></span>
       </div>
     </div>
@@ -982,7 +1541,7 @@
       </select>
       <p class="status-msg" style="margin:0;align-self:center">보관 유형에 따라 STEP.6 리드타임과 그 이후 GATE 3 일정이 달라져요.</p>
     </div>
-    <p class="status-msg" style="margin-bottom:10px">STEP.2 시작일·마감일을 입력하면 STEP.3 원가/가격 일정에 동일하게 채워지고, STEP.2 마감일을 입력하면 STEP.4 → STEP.4-1 → STEP.5 → STEP.6(보관 유형별 리드타임) → GATE 3(STEP.6 마감일 시작, 6개월 뒤 첫째 주 목요일 마감) 일정이 영업일 기준으로 자동 채워집니다. 이미 값이 있는 단계는 자동으로 덮어쓰지 않으며, 위에서 시작 단계를 고른 뒤 재계산 버튼을 누르면 그 단계부터 이후 전부를 다시 계산해 덮어씁니다.<br><b>각 단계마다 🔗 링크 추가 버튼으로 공유 드라이브 자료를 연결할 수 있어요.</b></p>
+    <p class="status-msg" style="margin-bottom:10px">STEP.2 시작일·마감일을 입력하면 STEP.3 원가/가격 일정에 동일하게 채워지고, STEP.2 마감일을 입력하면 STEP.4 → STEP.4-1 → STEP.5 → STEP.6(보관 유형별 리드타임) → GATE 3(STEP.6 마감일 시작, 6개월 뒤 첫째 주 목요일 마감) 일정이 영업일(주말·공휴일 제외) 기준으로 자동 채워집니다. 이미 값이 있는 단계는 자동으로 덮어쓰지 않아요. 기존 일정을 다시 맞추려면 위에서 <b>기준이 되는 단계</b>를 고르고 '일정 재계산'을 누르세요. <b>기준 단계 자체는 바뀌지 않고, 그 마감일을 바탕으로 화살표 뒤 단계들만 새로 계산해 덮어씁니다.</b> (GATE 1·2와 STEP.1은 자동 계산 대상이 아니에요)<br><b>각 단계마다 🔗 링크 추가 버튼으로 공유 드라이브 자료를 연결할 수 있어요.</b></p>
     <table>
       <thead><tr><th style="width:140px">단계</th><th>내용</th><th style="width:90px">상태</th><th style="width:130px">시작일</th><th style="width:130px">마감일</th></tr></thead>
       <tbody id="d-steps-body"></tbody>
@@ -1737,14 +2296,35 @@ function toDateStr(d){
   const day = String(d.getDate()).padStart(2,'0');
   return y+'-'+m+'-'+day;
 }
-// dateStr 기준으로 n영업일 뒤 날짜(주말 제외, dateStr 당일은 카운트하지 않음)
+// ===== 한국 공휴일 (리드타임·소요기간 계산에서 제외) =====
+// 대체공휴일·선거일 포함. 임시공휴일이나 회사 휴무일이 새로 생기면 아래 목록에 'YYYY-MM-DD' 형식으로 추가하면 된다.
+// 2025~2027: 정부 발표(월력요항) 기준 / 2028: 음력 기준 예상치 — 2027년 6월 월력요항 발표 후 확인 필요
+const KR_HOLIDAYS = new Set([
+  // 2025
+  '2025-01-01','2025-01-27','2025-01-28','2025-01-29','2025-01-30','2025-03-03','2025-05-01','2025-05-05','2025-05-06',
+  '2025-06-03','2025-06-06','2025-08-15','2025-10-03','2025-10-06','2025-10-07','2025-10-08','2025-10-09','2025-12-25',
+  // 2026 (노동절·제헌절 공휴일 지정, 6/3 지방선거)
+  '2026-01-01','2026-02-16','2026-02-17','2026-02-18','2026-03-02','2026-05-01','2026-05-05','2026-05-25',
+  '2026-06-03','2026-07-17','2026-08-17','2026-09-24','2026-09-25','2026-10-05','2026-10-09','2026-12-25',
+  // 2027
+  '2027-01-01','2027-02-08','2027-02-09','2027-03-01','2027-05-03','2027-05-05','2027-05-13','2027-07-19',
+  '2027-08-16','2027-09-14','2027-09-15','2027-09-16','2027-10-04','2027-10-11','2027-12-27',
+  // 2028 (예상치: 4/12 국회의원 선거 포함)
+  '2028-01-25','2028-01-26','2028-01-27','2028-03-01','2028-04-12','2028-05-01','2028-05-02','2028-05-05','2028-06-06',
+  '2028-07-17','2028-08-15','2028-10-02','2028-10-03','2028-10-04','2028-10-05','2028-10-09','2028-12-25'
+]);
+function isBusinessDay(d){
+  const w = d.getDay();
+  return w !== 0 && w !== 6 && !KR_HOLIDAYS.has(toDateStr(d));
+}
+
+// dateStr 기준으로 n영업일 뒤 날짜(주말·공휴일 제외, dateStr 당일은 카운트하지 않음)
 function addBusinessDays(dateStr, n){
   let d = parseLocalDate(dateStr);
   let added = 0;
   while(added < n){
     d.setDate(d.getDate()+1);
-    const day = d.getDay();
-    if(day !== 0 && day !== 6) added++;
+    if(isBusinessDay(d)) added++;
   }
   return toDateStr(d);
 }
@@ -2158,7 +2738,7 @@ function updateStorageType(){
   if(hadS6){
     const anchor = document.getElementById('recalc-anchor');
     if(anchor) anchor.value = 'STEP.5';
-    setRecalcMsg('보관 유형이 바뀌었어요. STEP.6 일정에 반영하려면 \'리드타임 재계산\'을 눌러주세요.', 'warn');
+    setRecalcMsg('보관 유형이 바뀌었어요. STEP.6 일정에 반영하려면 \'일정 재계산\'을 눌러주세요. (STEP.5 마감일 기준으로 미리 골라뒀어요)', 'warn');
   }
 }
 
@@ -2222,7 +2802,8 @@ function forceRecalc(btn){
     }
     saveData('d-save-status');
     renderDetail();
-    setRecalcMsg('✓ ' + (STAGE_LABEL[anchor] || anchor) + ' 이후 일정을 다시 계산했어요.', 'ok');
+    const RECALC_TARGET = {'STEP.2':'STEP.3 ~ GATE 3','STEP.4':'STEP.4-1 ~ GATE 3','STEP.4-1':'STEP.5 ~ GATE 3','STEP.5':'STEP.6 · GATE 3','STEP.6':'GATE 3'};
+    setRecalcMsg('✓ ' + anchor + ' 마감일 기준으로 ' + (RECALC_TARGET[anchor] || '이후 단계') + ' 일정을 다시 계산했어요.', 'ok');
   });
   // 첫 클릭이면 확인 안내를 함께 띄운다
   if(btn.dataset.armed === '1'){
@@ -2240,14 +2821,13 @@ function isOverdue(step){
 }
 
 // 오늘부터 N일 이내(오늘 포함, 아직 지나지 않은) 마감 예정인지
-// 시작일~마감일 사이 영업일 수 (양쪽 날짜 포함, 주말 제외)
+// 시작일~마감일 사이 영업일 수 (양쪽 날짜 포함, 주말·공휴일 제외)
 function businessDaysInclusive(fromISO, toISO){
   let d = parseLocalDate(fromISO);
   const end = parseLocalDate(toISO);
   let n = 0;
   while(d <= end){
-    const w = d.getDay();
-    if(w !== 0 && w !== 6) n++;
+    if(isBusinessDay(d)) n++;
     d.setDate(d.getDate()+1);
   }
   return n;
@@ -3521,7 +4101,7 @@ function renderPortfolioSummary(){
   const stack = document.createElement('div');
   stack.className = 'pf-stack';
   const parts = [
-    {n: byStatus.active.length, color:'var(--accent)'},
+    {n: byStatus.active.length, color:'var(--st-prog)'},
     {n: byStatus.done.length,   color:'var(--forest)'},
     {n: byStatus.hold.length,   color:'var(--amber)'},
     {n: byStatus.drop.length,   color:'var(--danger)'},
@@ -3538,7 +4118,7 @@ function renderPortfolioSummary(){
   const legend = document.createElement('div');
   legend.className = 'pf-legend';
   legend.innerHTML =
-    '<span><i style="background:var(--accent)"></i>진행 중 ' + byStatus.active.length + '</span>' +
+    '<span><i style="background:var(--st-prog)"></i>진행 중 ' + byStatus.active.length + '</span>' +
     '<span><i style="background:var(--forest)"></i>완료 ' + byStatus.done.length + '</span>' +
     '<span><i style="background:var(--amber)"></i>홀딩 ' + byStatus.hold.length + '</span>' +
     '<span><i style="background:var(--danger)"></i>드랍 ' + byStatus.drop.length + '</span>';
@@ -3581,7 +4161,7 @@ function renderPortfolioSummary(){
       const tdBar = document.createElement('td');
       const st = document.createElement('div');
       st.className = 'pf-stack'; st.style.marginBottom = '0';
-      [[a,'var(--accent)'],[d,'var(--forest)'],[ho,'var(--amber)'],[dr,'var(--danger)']].forEach(([nn,col])=>{
+      [[a,'var(--st-prog)'],[d,'var(--forest)'],[ho,'var(--amber)'],[dr,'var(--danger)']].forEach(([nn,col])=>{
         if(!nn || !ts.length) return;
         const seg = document.createElement('div');
         seg.style.width = (nn/ts.length*100) + '%';
@@ -3636,7 +4216,7 @@ function renderPortfolioSummary(){
         const st = document.createElement('div');
         st.className = 'pf-stack';
         st.style.marginBottom = '0';
-        [[a,'var(--accent)'],[d,'var(--forest)'],[ho,'var(--amber)'],[dr,'var(--danger)']].forEach(([n,col])=>{
+        [[a,'var(--st-prog)'],[d,'var(--forest)'],[ho,'var(--amber)'],[dr,'var(--danger)']].forEach(([n,col])=>{
           if(!n) return;
           const seg = document.createElement('div');
           seg.style.width = (n/ys.length*100) + '%';
@@ -4712,7 +5292,21 @@ async function exportCompareToExcel(){
 }
 
 // ===== 캔버스 유틸 =====
+// 내보내기(이미지·PPT)는 인쇄·보고용이라 화면 테마와 관계없이 기존 밝은 색을 쓴다
+const EXPORT_PALETTE = {
+  '--ink':'#1b202b','--ink-soft':'#5c6675','--ink-muted':'#7d8794',
+  '--paper':'#f4f2ec','--card':'#fbfaf6','--line':'#e3ded3','--line-strong':'#d0c9b8',
+  '--accent':'#2f5d8a','--accent-soft':'#eef3f9','--accent-ink':'#1f4166',
+  '--amber':'#b5720f','--amber-soft':'#f6ecd9','--amber-ink':'#8a5c12',
+  '--forest':'#3a7d44','--forest-soft':'#e3f0e4','--forest-ink':'#275c2e',
+  '--slate':'#5c6675','--slate-soft':'#ece7db','--slate-ink':'#4a5361',
+  '--danger':'#b5532a','--danger-soft':'#f6e7dc',
+  '--t0':'#5a6472','--t0-soft':'#eef0f3','--t0-ink':'#3d4653',
+  '--t1':'#1f7a70','--t1-soft':'#e6f2f0','--t1-ink':'#155c54',
+  '--t2':'#2f5d8a','--t2-soft':'#eef3f9','--t2-ink':'#1f4166'
+};
 function cssVar(name){
+  if(EXPORT_PALETTE[name]) return EXPORT_PALETTE[name];
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 function roundedRectPath(ctx,x,y,w,h,r){
@@ -5939,7 +6533,7 @@ function renderStorageUsage(){
 
   if(!box) return;
   box.innerHTML = '';
-  const COLORS_ST = ['var(--accent)', 'var(--forest)', 'var(--amber)', 'var(--slate)'];
+  const COLORS_ST = ['var(--st-prog)', 'var(--forest)', 'var(--amber)', 'var(--slate)'];
 
   // 전체 사용량
   const wrap = document.createElement('div');
@@ -6127,9 +6721,9 @@ function setTeam(t){
 
 // 선택한 팀에 따라 화면 전체 포인트 색상을 바꾼다
 const TEAM_ACCENT = {
-  all:   {accent:'#5a6472', soft:'#eef0f3', ink:'#3d4653'},
-  team1: {accent:'#1f7a70', soft:'#e6f2f0', ink:'#155c54'},
-  team2: {accent:'#2f5d8a', soft:'#eef3f9', ink:'#1f4166'},
+  all:   {accent:'#667085', soft:'#F0F2F5', ink:'#344054'},   // 전체 - 그레이
+  team1: {accent:'#0E8F83', soft:'#E8F8F5', ink:'#08665E'},   // 1팀 - 청록
+  team2: {accent:'#315EF6', soft:'#EEF3FF', ink:'#2146C7'},   // 2팀 - 블루
 };
 function applyTeamAccent(){
   const t = TEAM_ACCENT[activeTeam] || TEAM_ACCENT.team2;
