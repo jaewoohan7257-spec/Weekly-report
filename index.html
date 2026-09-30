@@ -1220,6 +1220,28 @@ tbody tr:hover td{
 /* 상태색 "진행 중" (화면 코드에서 사용) */
 :root{ --st-prog: var(--accent); }
 
+/* 상세 화면 상단 고정 바 (틀 고정) — 스크롤해도 '목록으로' 버튼이 항상 보이도록 */
+.detail-topbar{
+  position:sticky; top:8px; z-index:60;
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  margin:0 0 18px; padding:10px 12px;
+  background:rgba(255,255,255,.92); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+  border:1px solid var(--line); border-radius:14px; box-shadow:0 6px 20px rgba(16,24,40,.08);
+}
+.detail-topbar .detail-back-btn{font-weight:700}
+.detail-topbar-name{
+  flex:1 1 auto; min-width:0; font-size:13.5px; font-weight:700; color:var(--ink);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  opacity:0; transition:opacity .15s;
+}
+.detail-topbar.scrolled .detail-topbar-name{opacity:1}
+.detail-topbar .unsaved-dot{margin-left:0}
+.detail-topbar-right{margin-left:auto}
+@media (max-width:760px){
+  .detail-topbar{top:4px;padding:8px}
+  .detail-topbar-name{display:none}
+}
+
 /* 상단 헤더 버튼 줄바꿈 보정 — 제목 오른쪽에 버튼 4개가 한 줄로 오도록 */
 #list-view > .footer-actions:first-child{
   display:flex !important; flex-wrap:wrap; align-items:flex-end !important; column-gap:10px; row-gap:14px;
@@ -1489,9 +1511,12 @@ tbody tr:hover td{
 </div>
 
 <div id="detail-view">
-  <button onclick="showList()" style="margin-bottom:14px">← 목록으로</button>
-  <span id="unsaved-dot" class="unsaved-dot" style="display:none">● 저장되지 않은 변경</span>
-  <button onclick="exportProjectToExcel()" style="margin-bottom:14px;margin-left:8px">⬇ 이 프로젝트 엑셀로 내보내기</button>
+  <div class="detail-topbar" id="detail-topbar">
+    <button onclick="showList()" class="detail-back-btn">← 목록으로</button>
+    <span class="detail-topbar-name" id="d-topbar-name"></span>
+    <span id="unsaved-dot" class="unsaved-dot" style="display:none">● 저장되지 않은 변경</span>
+    <button onclick="exportProjectToExcel()" class="detail-topbar-right">⬇ 이 프로젝트 엑셀로 내보내기</button>
+  </div>
   <p class="eyebrow">프로젝트 상세</p>
   <h1 id="d-name" contenteditable="true" spellcheck="false" title="클릭해서 프로젝트명 수정" style="outline:none;border-bottom:1px dashed transparent;cursor:text" onblur="onDNameBlur()" onkeydown="onDNameKeydown(event)">-</h1>
   <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px">
@@ -1636,7 +1661,7 @@ if(FIREBASE_OK){
   window.addEventListener("DOMContentLoaded", ()=>{
     const bar = document.createElement("div");
     bar.textContent = "⚠ Firebase에 연결되지 않았어요. 지금 입력한 내용은 팀원과 공유되지 않아요. (GitHub Pages 주소로 열어주세요)";
-    bar.style.cssText = "position:sticky;top:0;z-index:9999;background:#f87171;color:#fff;padding:8px 14px;font-size:13px;text-align:center";
+    bar.style.cssText = "position:relative;z-index:70;margin:0 -34px;background:#f87171;color:#fff;padding:8px 14px;font-size:13px;text-align:center";
     document.body.prepend(bar);
   });
 }
@@ -2258,13 +2283,31 @@ async function resetAll(){
   render();
 }
 
+// 페이지 전체에 부드러운 스크롤이 걸려 있어도, 화면 전환 때는 애니메이션 없이 바로 이동한다
+function instantScroll(fn){
+  const h = document.documentElement;
+  const prev = h.style.scrollBehavior;
+  h.style.setProperty('scroll-behavior','auto','important');
+  try{ fn(); } finally { requestAnimationFrame(()=>{ h.style.removeProperty('scroll-behavior'); if(prev) h.style.scrollBehavior = prev; }); }
+}
+// 상세 상단 고정 바: 프로젝트명 표시 + 스크롤 시 이름 노출
+function syncDetailTopbar(){
+  const bar = document.getElementById('detail-topbar');
+  const nm = document.getElementById('d-topbar-name');
+  const h1 = document.getElementById('d-name');
+  if(nm && h1) nm.textContent = h1.textContent;
+  if(bar && h1) bar.classList.toggle('scrolled', h1.getBoundingClientRect().bottom < 60);
+}
+window.addEventListener('scroll', ()=>{ if(currentDetailId !== null) syncDetailTopbar(); }, {passive:true});
+
 function showDetail(id){
   currentDetailId = id;
   document.getElementById('list-view').style.display = 'none';
   document.getElementById('detail-view').style.display = 'block';
   renderDetail();
-  // 상세로 들어갈 때는 항상 최상단부터 보이도록
-  window.scrollTo({top:0, behavior:'auto'});
+  // 상세로 들어갈 때는 항상 최상단부터 보이도록 (애니메이션 없이 바로)
+  instantScroll(()=> window.scrollTo({top:0, left:0, behavior:'instant'}));
+  syncDetailTopbar();
 }
 
 function showList(){
@@ -2274,7 +2317,7 @@ function showList(){
   render();
   // 목록으로 돌아올 때 담당자별 현황 분석 위치로 스크롤
   const target = document.getElementById('owner-analysis-panel');
-  if(target) target.scrollIntoView({behavior:'auto', block:'start'});
+  if(target) instantScroll(()=> target.scrollIntoView({behavior:'instant', block:'start'}));
 }
 
 // 리드타임 체인: [기준 단계, 대상 단계, 리드타임(영업일 기준 주)]
@@ -2900,6 +2943,7 @@ function isUpcoming(step, days){
 }
 
 function renderDetail(){
+  setTimeout(syncDetailTopbar, 0);
   const proj = projects.find(p=>p.id===currentDetailId);
   if(!proj) return;
   document.getElementById('d-name').textContent = proj.name;
@@ -6716,7 +6760,7 @@ function setTeam(t){
   try{ window.storage.set(TEAM_KEY, t, false); }catch(e){}
   applyTeamUI();
   render();
-  window.scrollTo({top:0, behavior:'auto'});
+  instantScroll(()=> window.scrollTo({top:0, left:0, behavior:'instant'}));
 }
 
 // 선택한 팀에 따라 화면 전체 포인트 색상을 바꾼다
