@@ -1608,6 +1608,38 @@ table{border:1px solid var(--line)!important;border-radius:14px!important;overfl
 }
 </style>
 <style id="app-feature-styles">
+
+/* ===== 로그인 · 권한 ===== */
+body.not-owner .owner-only{display:none !important}
+#auth-overlay{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(160deg,#eef3ff,#f7f9fc 60%);padding:20px}
+.auth-card{width:min(420px,100%);background:#fff;border:1px solid #e3e8f0;border-radius:18px;padding:34px 30px;text-align:center;
+  box-shadow:0 20px 50px rgba(20,40,90,.12)}
+.auth-logo{font-size:34px;margin-bottom:8px}
+.auth-card h2{font-size:19px;margin:0 0 10px;color:#172033}
+.auth-desc{font-size:13.5px;line-height:1.7;color:#5b6576;margin:0 0 18px}
+.auth-btn{width:100%;padding:12px 16px;font-size:14px;font-weight:700}
+.auth-err{margin:12px 0 0;font-size:12.5px;color:#b42318}
+#auth-bar{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;padding:8px 0 0;font-size:12.5px;color:#5b6576}
+#auth-bar button{padding:5px 11px;font-size:12px}
+.auth-who{display:inline-flex;align-items:center;gap:6px;margin-right:4px}
+.auth-role{display:inline-block;font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px}
+.auth-role.owner{background:#EEF3FF;color:#2146C7}
+.auth-role.member{background:#E9F8F3;color:#087457}
+#member-panel{position:fixed;inset:0;z-index:9000;background:rgba(15,23,42,.35);display:flex;align-items:flex-start;justify-content:center;padding:60px 16px;overflow:auto}
+.mp-card{width:min(620px,100%);background:#fff;border-radius:16px;padding:22px 24px;box-shadow:0 20px 50px rgba(0,0,0,.2)}
+.mp-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:15px}
+.mp-desc{font-size:12.5px;color:#5b6576;line-height:1.6;margin:6px 0 12px}
+.mp-add{display:flex;gap:8px;margin-bottom:12px}
+.mp-add input{flex:1}
+.mp-list{border:1px solid #e3e8f0;border-radius:10px;padding:4px 12px;max-height:260px;overflow:auto}
+.mp-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f2f6;font-size:13px}
+.mp-row:last-child{border-bottom:none}
+.mp-row button{padding:3px 10px;font-size:12px}
+.mp-msg{font-size:12.5px;color:#2146C7;min-height:18px;margin:8px 0 0}
+.mp-rules{margin-top:14px;font-size:13px}
+.mp-rules summary{cursor:pointer;font-weight:700}
+.mp-rules textarea{width:100%;height:220px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;margin:6px 0}
 /* 현황판 기능용 스타일 (요약 태그·간트 라벨·상세 고정 바 등) — 디자인 v7 위에 덧붙임 */
 /* 상태색 "진행 중" (화면 코드에서 사용) */
 :root{ --st-prog: var(--accent); }
@@ -1771,7 +1803,7 @@ table{border:1px solid var(--line)!important;border-radius:14px!important;overfl
     <p class="status-msg" style="margin:0">백업은 <b>보고 있는 탭 기준</b>으로 저장·불러오기돼요. 팀 탭에서 불러오면 <b>그 팀 데이터만</b> 교체되고 다른 팀은 건드리지 않아요. 1·2팀 전체 백업은 전체 현황 탭에서 불러오세요. 다른 팀 파일을 고르면 자동으로 막아드려요.</p>
     <div style="display:flex;gap:8px">
       <button onclick="exportBackup()">📤 백업 저장 (JSON)</button>
-      <button onclick="document.getElementById('backup-file-input').click()" title="팀 탭: 그 팀 데이터만 교체 / 전체 탭: 1·2팀 전체 백업만 가능">📥 백업 불러오기</button>
+      <button class="owner-only" onclick="document.getElementById('backup-file-input').click()" title="팀 탭: 그 팀 데이터만 교체 / 전체 탭: 1·2팀 전체 백업만 가능">📥 백업 불러오기</button>
       <input type="file" id="backup-file-input" accept=".json,application/json" style="display:none" onchange="importBackup(event)">
     </div>
   </div>
@@ -1849,8 +1881,8 @@ table{border:1px solid var(--line)!important;border-radius:14px!important;overfl
       <span class="status-msg" id="save-status"></span>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <span class="status-msg" id="pin-status" style="margin:0"></span>
-        <button onclick="togglePinSetup()">🔒 삭제 PIN 설정</button>
-        <span id="reset-all-wrap"><button onclick="requestResetAll(document.getElementById('reset-all-wrap'))">초기화</button></span>
+        <button class="owner-only" onclick="togglePinSetup()">🔒 삭제 PIN 설정</button>
+        <span id="reset-all-wrap" class="owner-only"><button onclick="requestResetAll(document.getElementById('reset-all-wrap'))">초기화</button></span>
       </div>
     </div>
     <div id="pin-setup-box" style="display:none;margin-top:10px"></div>
@@ -1918,7 +1950,7 @@ table{border:1px solid var(--line)!important;border-radius:14px!important;overfl
       <p class="status-msg" id="snapshot-status" style="margin:0"></p>
       <div style="display:flex;gap:8px">
         <button onclick="exportSnapshotsBackup()" title="보관함의 모든 스냅샷을 하나의 파일로 저장">📤 스냅샷 전체 백업 저장</button>
-        <button onclick="document.getElementById('snapshot-backup-file-input').click()" title="같은 주차가 있으면 보고 있는 팀 부분만 교체되고 다른 팀 기록은 유지돼요">📥 스냅샷 백업 불러오기</button>
+        <button class="owner-only" onclick="document.getElementById('snapshot-backup-file-input').click()" title="같은 주차가 있으면 보고 있는 팀 부분만 교체되고 다른 팀 기록은 유지돼요">📥 스냅샷 백업 불러오기</button>
         <input type="file" id="snapshot-backup-file-input" accept=".json,application/json" style="display:none" onchange="importSnapshotsBackup(event)">
       </div>
     </div>
@@ -2066,19 +2098,35 @@ table{border:1px solid var(--line)!important;border-radius:14px!important;overfl
   <button onclick="scrollToBottom()" title="맨 아래로">▼</button>
 </div>
 
-<!-- ===== Firebase 저장소 연결 (GitHub Pages 게시용) ===== -->
+<!-- ===== Firebase 저장소 + 로그인 (GitHub Pages 게시용) ===== -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
-// ▼ Firebase 콘솔 > Realtime Database > 데이터 탭 맨 위에 보이는 주소와 같은지 확인하세요
-const FIREBASE_DB_URL = "https://project-dashboard-2431e-default-rtdb.asia-southeast1.firebasedatabase.app";
-const FIREBASE_ROOT   = "dashboard";   // DB 안에서 이 대시보드 데이터가 들어갈 폴더 이름
+// =====================================================================
+// ▼▼▼ 처음 한 번만 채워주세요 (설정 방법은 안내 문서 참고) ▼▼▼
+// Firebase 콘솔 › 프로젝트 설정(톱니바퀴) › 일반 › 내 앱(웹) › SDK 설정 및 구성 의 apiKey 값
+const FIREBASE_API_KEY = "AIzaSyC4Tp2VKkdvVCsraADjpUuNppHnrsvfg6o";
+// 삭제 권한을 가질 관리자(본인) 구글 계정 이메일
+const OWNER_EMAIL = "jaewoohan7257@gmail.com";
+// ▲▲▲ 여기까지 ▲▲▲
+// =====================================================================
 
-// Firebase 라이브러리를 못 불러온 환경(Claude 미리보기, 인터넷 차단 등)에서도 화면이 멈추지 않도록 한다
+const FIREBASE_DB_URL = "https://project-dashboard-2431e-default-rtdb.asia-southeast1.firebasedatabase.app";
+const FIREBASE_ROOT   = "dashboard";
+
+// Firebase 라이브러리를 못 불러온 환경(미리보기, 인터넷 차단 등)에서도 화면이 멈추지 않도록 한다
 const FIREBASE_OK = (typeof firebase !== "undefined");
+const AUTH_CONFIGURED = FIREBASE_OK && typeof firebase.auth === "function"
+  && !/여기에/.test(FIREBASE_API_KEY) && !/여기에/.test(OWNER_EMAIL);
+const OWNER = String(OWNER_EMAIL).trim().toLowerCase();
+const emailKey = e => String(e || '').trim().toLowerCase().replace(/\./g, ',');
+
 let _fbdb = null;
 if(FIREBASE_OK){
   firebase.initializeApp({
+    apiKey: /여기에/.test(FIREBASE_API_KEY) ? undefined : FIREBASE_API_KEY,
+    authDomain: "project-dashboard-2431e.firebaseapp.com",
     projectId: "project-dashboard-2431e",
     databaseURL: FIREBASE_DB_URL
   });
@@ -2093,25 +2141,94 @@ if(FIREBASE_OK){
   });
 }
 
-// 기존 코드가 쓰던 window.storage.get/set 을 그대로 흉내 낸다.
-//  - 공유 데이터(shared=true)  → Firebase Realtime Database
-//  - 개인 설정(shared=false)   → 이 브라우저의 localStorage
-// 공유 항목은 실시간 리스너로 한 번만 받아두고, 이후엔 바뀐 부분만 내려받는다
-// (8초 자동 새로고침이 매번 전체 데이터를 다운로드하지 않도록 → 무료 요금제 절약)
-(function(){
-  const cache = {}, ready = {};
-  const safeKey = k => String(k).replace(/[.#$\[\]\/]/g, "_");
-  const ref = k => _fbdb.ref(FIREBASE_ROOT + "/" + safeKey(k));
+// ===== 로그인·권한 =====
+// 관리자(OWNER_EMAIL): 모든 기능 + 삭제 / 등록된 팀원: 조회·추가·수정·보관함 이관 / 그 외: 접근 불가
+// 실제 차단은 Firebase 보안 규칙이 하고, 화면은 권한에 맞게 버튼만 숨긴다.
+const AUTH = { enabled: AUTH_CONFIGURED, user: null, email: '', isOwner: !AUTH_CONFIGURED, isMember: !AUTH_CONFIGURED };
+let _gateResolve;
+AUTH.gate = new Promise(res => { _gateResolve = res; });
+if(!FIREBASE_OK) _gateResolve();          // 로컬(미리보기)에서는 바로 사용
+function canDelete(){ return !AUTH.enabled || AUTH.isOwner; }
+function denyDelete(msgElId){
+  const t = '🔒 삭제·초기화·백업 복원은 관리자만 할 수 있어요.';
+  const el = msgElId && document.getElementById(msgElId);
+  if(el) el.textContent = t; else alert(t);
+}
 
+if(FIREBASE_OK && !AUTH_CONFIGURED){
+  window.addEventListener("DOMContentLoaded", ()=>{
+    const bar = document.createElement("div");
+    bar.textContent = "⚙ 로그인·삭제 권한 설정이 아직 안 됐어요. index.html 맨 위의 FIREBASE_API_KEY와 OWNER_EMAIL을 채워주세요. (지금은 누구나 모든 기능 사용 가능)";
+    bar.style.cssText = "position:relative;z-index:70;margin:0 -34px;background:#f59e0b;color:#fff;padding:8px 14px;font-size:13px;text-align:center";
+    document.body.prepend(bar);
+  });
+}
+
+// ===== 저장소 =====
+// 프로젝트·스냅샷은 한 건당 한 칸으로 나눠 저장한다 (dashboard/projects/{id}, dashboard/snapshots/{주차}).
+// → 보안 규칙에서 '삭제'만 관리자에게 허용할 수 있다.
+// 앱의 나머지 코드는 예전처럼 'projects_v2' / 'snapshots_v1' 전체 배열 문자열로 읽고 쓰며, 여기서 한 건 단위로 바꿔준다.
+(function(){
+  const COLLECTIONS = {
+    projects_v2:  {path: 'projects',  idOf: p => String(p && p.id)},
+    snapshots_v1: {path: 'snapshots', idOf: s => String(s && s.week)}
+  };
+  const enc = k => String(k).replace(/[.#$\[\]\/]/g, "_");
+  const cache = {}, maps = {}, ready = {};
+  const ref = p => _fbdb.ref(FIREBASE_ROOT + "/" + p);
+
+  function assemble(key){
+    const m = maps[key] || {};
+    const rows = Object.keys(m).map(k => ({k, o: +m[k].o || 0, v: m[k].v}))
+      .sort((a,b)=> a.o - b.o || (a.k < b.k ? -1 : 1));
+    if(!rows.length) return null;
+    return '[' + rows.map(r => r.v).join(',') + ']';
+  }
   function watch(key){
     if(!ready[key]){
+      const col = COLLECTIONS[key];
       ready[key] = new Promise((resolve, reject)=>{
-        ref(key).on("value",
-          snap => { cache[key] = snap.val(); resolve(); },
-          err  => { delete ready[key]; reject(err); });
+        ref(col ? col.path : enc(key)).on("value",
+          snap => {
+            if(col){ maps[key] = snap.val() || {}; cache[key] = assemble(key); }
+            else cache[key] = snap.val();
+            resolve();
+          },
+          err => { delete ready[key]; reject(err); });
       });
     }
     return ready[key];
+  }
+
+  // 배열 문자열 → 바뀐 항목만 한 건 단위로 반영 (삭제는 관리자만. 팀원 화면에서는 삭제를 건너뛴다)
+  async function writeCollection(key, str){
+    const col = COLLECTIONS[key];
+    await watch(key);
+    let arr = [];
+    try{ arr = str ? JSON.parse(str) : []; if(!Array.isArray(arr)) arr = []; }catch(e){ arr = []; }
+    const cur = maps[key] || {};
+    let maxO = Object.values(cur).reduce((a,x)=> Math.max(a, +x.o || 0), 0);
+    const updates = {}, seen = new Set();
+    let skipped = 0;
+    arr.forEach(item=>{
+      const k = enc(col.idOf(item));
+      if(seen.has(k)) return;
+      seen.add(k);
+      const v = JSON.stringify(item);
+      if(!cur[k]) updates[k] = {v, o: ++maxO};
+      else if(cur[k].v !== v) updates[k] = {v, o: cur[k].o};
+    });
+    Object.keys(cur).forEach(k=>{
+      if(seen.has(k)) return;
+      if(canDelete()) updates[k] = null; else skipped++;
+    });
+    if(Object.keys(updates).length){
+      await ref(col.path).update(updates);
+      const m = Object.assign({}, cur);
+      Object.keys(updates).forEach(k=>{ if(updates[k] === null) delete m[k]; else m[k] = updates[k]; });
+      maps[key] = m; cache[key] = assemble(key);
+    }
+    return {key, value: cache[key], shared: true, skippedDeletes: skipped};
   }
 
   const local = {
@@ -2123,27 +2240,29 @@ if(FIREBASE_OK){
   window.storage = {
     async get(key, shared){
       if(!shared || !FIREBASE_OK) return local.get(key);
+      await AUTH.gate;
       await watch(key);
       const v = cache[key];
       return (v === null || v === undefined) ? null : {key, value: v, shared: true};
     },
     async set(key, value, shared){
       if(!shared || !FIREBASE_OK) return local.set(key, value);
-      await ref(key).set(value);
+      await AUTH.gate;
+      if(COLLECTIONS[key]) return writeCollection(key, value);
+      await ref(enc(key)).set(value);
       cache[key] = value;
       return {key, value, shared: true};
     },
     async delete(key, shared){
       if(!shared || !FIREBASE_OK) return local.del(key);
-      await ref(key).remove();
+      await AUTH.gate;
+      if(COLLECTIONS[key]) return writeCollection(key, '[]');
+      await ref(enc(key)).remove();
       cache[key] = null;
       return {key, deleted: true, shared: true};
     },
-    async list(prefix, shared){
-      return {keys: [], prefix, shared};
-    },
-    // 최신 값을 읽어 고친 뒤 쓰기까지를 한 번에 처리 (그 사이 다른 사람이 저장하면 자동으로 다시 시도)
-    // updateFn(현재값 문자열|null) → 새 문자열 (undefined를 반환하면 취소)
+    async list(prefix, shared){ return {keys: [], prefix, shared}; },
+    // 최신 값을 읽어 고친 뒤, 바뀐 항목만 저장 (updateFn이 undefined를 반환하면 취소)
     async transact(key, updateFn, shared){
       if(!shared || !FIREBASE_OK){
         const cur = local.get(key);
@@ -2152,17 +2271,200 @@ if(FIREBASE_OK){
         local.set(key, next);
         return {committed:true, value: next};
       }
-      const res = await ref(key).transaction(cur => {
+      await AUTH.gate;
+      if(COLLECTIONS[key]){
+        await watch(key);
+        const next = updateFn(cache[key] === undefined ? null : cache[key]);
+        if(next === undefined) return {committed:false, value: cache[key]};
+        const r = await writeCollection(key, next);
+        return {committed:true, value: r.value, skippedDeletes: r.skippedDeletes};
+      }
+      const res = await ref(enc(key)).transaction(cur => {
         const next = updateFn(cur === undefined ? null : cur);
         return next === undefined ? undefined : next;
       });
       const val = res.snapshot.val();
       if(res.committed) cache[key] = val;
       return {committed: res.committed, value: val};
+    },
+    // 예전 구조(전체를 한 덩어리로 저장) → 새 구조(한 건씩)로 한 번만 옮긴다. 예전 데이터는 지우지 않고 남겨둔다.
+    async migrateLegacy(){
+      const meta = await ref('meta/migratedV3').once('value');
+      if(meta.val()) return false;
+      let moved = 0;
+      for(const [key, col] of Object.entries(COLLECTIONS)){
+        const [legacy, current] = await Promise.all([ref(enc(key)).once('value'), ref(col.path).once('value')]);
+        if(current.val() || typeof legacy.val() !== 'string') continue;
+        let arr = [];
+        try{ arr = JSON.parse(legacy.val()); }catch(e){ continue; }
+        if(!Array.isArray(arr) || !arr.length) continue;
+        const updates = {};
+        arr.forEach((item, i)=>{ const k = enc(col.idOf(item)); if(!updates[k]) updates[k] = {v: JSON.stringify(item), o: i+1}; });
+        await ref(col.path).update(updates);
+        moved += Object.keys(updates).length;
+      }
+      await ref('meta/migratedV3').set({at: new Date().toISOString(), by: AUTH.email || 'unknown', moved});
+      return moved;
     }
   };
 })();
+
+// 로그인 설정 전에도 예전 구조 데이터를 새 구조로 옮긴 뒤 사용 (누구나 모든 기능 사용 가능한 임시 상태)
+if(FIREBASE_OK && !AUTH_CONFIGURED){
+  window.storage.migrateLegacy().catch(e=>console.warn('구조 변환 실패', e)).finally(()=>_gateResolve());
+}
+
+// ===== 로그인 화면 =====
+let _authStateShown = false;
+function authOverlay(state, detail){
+  if(!document.body){ window.addEventListener('DOMContentLoaded', ()=>authOverlay(state, detail)); return; }
+  if(state !== 'loading') _authStateShown = true;
+  let ov = document.getElementById('auth-overlay');
+  if(!ov){
+    ov = document.createElement('div');
+    ov.id = 'auth-overlay';
+    document.body.appendChild(ov);
+  }
+  if(state === 'hide'){ ov.remove(); return; }
+  const esc = s => String(s || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const body = {
+    loading: '<p class="auth-desc">로그인 상태를 확인하고 있어요...</p>',
+    signin:  '<p class="auth-desc">팀원만 볼 수 있는 페이지예요.<br>회사에서 쓰는 구글 계정으로 로그인해주세요.</p>' +
+             '<button class="primary auth-btn" onclick="authSignIn()">G&nbsp; 구글 계정으로 로그인</button>' +
+             (detail ? '<p class="auth-err">' + esc(detail) + '</p>' : ''),
+    denied:  '<p class="auth-desc"><b>' + esc(detail) + '</b> 계정은 아직 등록되지 않았어요.<br>관리자에게 이 이메일을 팀원으로 등록해 달라고 요청해주세요.</p>' +
+             '<button class="auth-btn" onclick="authSignOut()">다른 계정으로 로그인</button>'
+  }[state] || '';
+  ov.innerHTML = '<div class="auth-card"><div class="auth-logo">📋</div><h2>상품마케팅팀 주간업무 현황</h2>' + body + '</div>';
+}
+async function authSignIn(){
+  const provider = new firebase.auth.GoogleAuthProvider();
+  provider.setCustomParameters({prompt: 'select_account'});
+  try{ await firebase.auth().signInWithPopup(provider); }
+  catch(e){
+    if(e && (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment')){
+      return firebase.auth().signInWithRedirect(provider);
+    }
+    if(e && e.code === 'auth/popup-closed-by-user') return;
+    authOverlay('signin', '로그인에 실패했어요: ' + (e && (e.code || e.message)));
+  }
+}
+async function authSignOut(){ try{ await firebase.auth().signOut(); }catch(e){} location.reload(); }
+
+if(AUTH_CONFIGURED){
+  window.addEventListener('DOMContentLoaded', ()=>{ if(!_authStateShown) authOverlay('loading'); });
+  firebase.auth().onAuthStateChanged(async user=>{
+    if(!user){ authOverlay('signin'); return; }
+    AUTH.user = user;
+    AUTH.email = String(user.email || '').toLowerCase();
+    AUTH.isOwner = AUTH.email === OWNER;
+    if(!AUTH.isOwner){
+      try{
+        const s = await _fbdb.ref(FIREBASE_ROOT + '/members/' + emailKey(AUTH.email)).once('value');
+        AUTH.isMember = s.val() === true;
+      }catch(e){ AUTH.isMember = false; }
+    } else AUTH.isMember = true;
+    if(!AUTH.isMember){ authOverlay('denied', AUTH.email); return; }
+    try{ const moved = await window.storage.migrateLegacy(); if(moved) console.info('새 저장 구조로 ' + moved + '건 옮김'); }
+    catch(e){ console.warn('구조 변환 실패', e); }
+    authOverlay('hide');
+    applyRoleUI();
+    _gateResolve();
+  });
+}
+
+// 권한에 따라 화면 표시 (관리자 전용 버튼 숨김 + 상단 계정 표시줄)
+function applyRoleUI(){
+  const ready = ()=>{
+    document.body.classList.toggle('is-owner', canDelete());
+    document.body.classList.toggle('not-owner', !canDelete());
+    if(!AUTH.enabled) return;
+    let bar = document.getElementById('auth-bar');
+    if(!bar){ bar = document.createElement('div'); bar.id = 'auth-bar'; document.body.prepend(bar); }
+    bar.innerHTML = '';
+    const who = document.createElement('span');
+    who.className = 'auth-who';
+    who.innerHTML = '<span class="auth-role ' + (AUTH.isOwner ? 'owner' : 'member') + '">' + (AUTH.isOwner ? '관리자' : '팀원') + '</span> ';
+    who.appendChild(document.createTextNode(AUTH.email));
+    bar.appendChild(who);
+    if(AUTH.isOwner){
+      const mb = document.createElement('button'); mb.textContent = '👥 팀원·권한 관리'; mb.onclick = toggleMemberPanel;
+      bar.appendChild(mb);
+    }
+    const lo = document.createElement('button'); lo.textContent = '로그아웃'; lo.onclick = authSignOut;
+    bar.appendChild(lo);
+  };
+  if(document.body) ready(); else window.addEventListener('DOMContentLoaded', ready);
+}
+if(!AUTH_CONFIGURED) window.addEventListener('DOMContentLoaded', applyRoleUI);
+
+// ===== 관리자: 팀원 등록 + 보안 규칙 =====
+function buildSecurityRules(){
+  const E = "auth.token.email.toLowerCase()";
+  const isOwner = "(auth != null && auth.token.email_verified === true && " + E + " === '" + OWNER + "')";
+  const isMember = "(auth != null && auth.token.email_verified === true && (" + E + " === '" + OWNER + "' || root.child('dashboard/members').child(" + E + ".replace('.', ',')).val() === true))";
+  const ownerOnly = {".write": isOwner};
+  return JSON.stringify({rules: {dashboard: {
+    ".read": isMember,
+    "members": {".read": isOwner, ".write": isOwner,
+                "$ek": {".read": "auth != null && " + E + ".replace('.', ',') === $ek"}},
+    "projects":  {"$pid": {".write": isMember + " && (newData.exists() || " + isOwner + ")"}},
+    "snapshots": {"$sid": {".write": isMember + " && (newData.exists() || " + isOwner + ")"}},
+    "projects_v2": ownerOnly, "snapshots_v1": ownerOnly, "delete_pin_v1": ownerOnly,
+    "$other": {".write": isMember}
+  }}}, null, 2);
+}
+async function toggleMemberPanel(){
+  let p = document.getElementById('member-panel');
+  if(p){ p.remove(); return; }
+  p = document.createElement('div');
+  p.id = 'member-panel';
+  p.innerHTML =
+    '<div class="mp-card"><div class="mp-head"><b>👥 팀원·권한 관리</b><button onclick="toggleMemberPanel()">닫기</button></div>' +
+    '<p class="mp-desc">등록된 팀원은 조회·추가·수정·보관함 이관을 할 수 있어요. <b>프로젝트 삭제 · 초기화 · 백업 불러오기 · 스냅샷 삭제</b>는 관리자(' + OWNER + ')만 할 수 있어요.</p>' +
+    '<div class="mp-add"><input id="mp-email" type="email" placeholder="팀원 구글 이메일 (예: name@gmail.com)"><button class="primary" onclick="addMember()">등록</button></div>' +
+    '<div id="mp-list" class="mp-list">불러오는 중...</div><p id="mp-msg" class="mp-msg"></p>' +
+    '<details class="mp-rules"><summary>🛡️ Firebase 보안 규칙 (처음 한 번 콘솔에 붙여넣기)</summary>' +
+    '<p class="mp-desc">Firebase 콘솔 › Realtime Database › 규칙 탭에 아래 내용을 통째로 붙여넣고 [게시]를 누르세요. 팀원 등록을 먼저 마친 뒤 게시하는 것을 권해요.</p>' +
+    '<textarea id="mp-rules" readonly></textarea><button onclick="copyRules()">규칙 복사</button></details></div>';
+  document.body.appendChild(p);
+  document.getElementById('mp-rules').value = buildSecurityRules();
+  renderMemberList();
+}
+async function renderMemberList(){
+  const box = document.getElementById('mp-list'); if(!box) return;
+  try{
+    const s = await _fbdb.ref(FIREBASE_ROOT + '/members').once('value');
+    const keys = Object.keys(s.val() || {}).filter(k => (s.val() || {})[k] === true).sort();
+    box.innerHTML = '';
+    const ownerRow = document.createElement('div'); ownerRow.className = 'mp-row';
+    ownerRow.innerHTML = '<span>' + OWNER + '</span><span class="auth-role owner">관리자</span>';
+    box.appendChild(ownerRow);
+    keys.forEach(k=>{
+      const email = k.replace(/,/g, '.');
+      const row = document.createElement('div'); row.className = 'mp-row';
+      const sp = document.createElement('span'); sp.textContent = email;
+      const rm = document.createElement('button'); rm.textContent = '해제';
+      rm.onclick = async ()=>{ await _fbdb.ref(FIREBASE_ROOT + '/members/' + k).remove(); renderMemberList(); };
+      row.append(sp, rm); box.appendChild(row);
+    });
+    if(!keys.length){ const e = document.createElement('p'); e.className = 'mp-desc'; e.textContent = '아직 등록된 팀원이 없어요.'; box.appendChild(e); }
+  }catch(e){ box.textContent = '목록을 불러오지 못했어요: ' + (e.code || e.message); }
+}
+async function addMember(){
+  const inp = document.getElementById('mp-email'); const msg = document.getElementById('mp-msg');
+  const v = (inp.value || '').trim().toLowerCase();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)){ msg.textContent = '이메일 형식을 확인해주세요.'; return; }
+  try{ await _fbdb.ref(FIREBASE_ROOT + '/members/' + emailKey(v)).set(true); inp.value = ''; msg.textContent = v + ' 등록 완료'; renderMemberList(); }
+  catch(e){ msg.textContent = '등록 실패: ' + (e.code || e.message); }
+}
+function copyRules(){
+  const t = document.getElementById('mp-rules'); t.select();
+  try{ navigator.clipboard.writeText(t.value); }catch(e){ document.execCommand('copy'); }
+  document.getElementById('mp-msg').textContent = '보안 규칙을 복사했어요. Firebase 콘솔 규칙 탭에 붙여넣고 [게시]를 눌러주세요.';
+}
 </script>
+
 
 <script>
 const STAGES = ["STEP.1","GATE 1","STEP.2","STEP.3","STEP.4","STEP.4-1","GATE 2","STEP.5","STEP.6","GATE 3"];
@@ -2205,6 +2507,7 @@ function renderPinStatus(){
 }
 
 function togglePinSetup(){
+  if(!canDelete()){ denyDelete('pin-status'); return; }
   const box = document.getElementById('pin-setup-box');
   if(!box) return;
   if(box.style.display === 'none' || !box.style.display){
@@ -2311,6 +2614,7 @@ function renderPinGate(container, verifyFn, onSuccess, resetFn){
 
 // PIN이 설정되어 있으면 PIN 확인 후 삭제, 아니면 기존처럼 두 번 클릭 확인
 function requestDeleteProject(id, container, resetFn){
+  if(!canDelete()){ denyDelete('save-status'); return; }
   resetFn = resetFn || render;
   if(!deletePinHash){
     const btn = container.querySelector('.del-btn') || container.querySelector('button');
@@ -2321,6 +2625,7 @@ function requestDeleteProject(id, container, resetFn){
 }
 
 function requestResetAll(container){
+  if(!canDelete()){ denyDelete('save-status'); return; }
   if(!deletePinHash){
     const btn = container.querySelector('button');
     armButton(btn, '⚠ 다시 누르면 ' + (activeTeam === 'all' ? '1·2팀 전체' : TEAMS[activeTeam].label + ' 데이터') + ' 삭제', resetAll);
@@ -2654,6 +2959,7 @@ function addProject(){
 }
 
 function deleteProject(id){
+  if(!canDelete()){ denyDelete('save-status'); return; }
   markDeleted(id);
   projects = projects.filter(x=>x.id!==id);
   saveData('save-status');
@@ -2724,6 +3030,7 @@ function resetWeeklyReview(btn){
 
 // 초기화: 팀 탭에서는 그 팀 데이터만, 전체 현황 탭에서는 1·2팀 모두
 async function resetAll(){
+  if(!canDelete()){ denyDelete('save-status'); return; }
   if(hasUnsaved()) await saveData('save-status');
   const res = await replaceTeamProjects(activeTeam === 'all' ? 'all' : activeTeam, []);
   render();
@@ -4046,7 +4353,7 @@ function render(){
 
     const tdDel = document.createElement('td');
     const delBtn = document.createElement('button');
-    delBtn.className = 'del-btn'; delBtn.textContent = '삭제';
+    delBtn.className = 'del-btn owner-only'; delBtn.textContent = '삭제';
     delBtn.onclick = ()=>requestDeleteProject(p.id, tdDel, render);
     tdDel.appendChild(delBtn);
     tr.append(tdOwner, tdName, tdSummary, tdStatusLight, tdStage, tdReview, tdDel);
@@ -4459,6 +4766,7 @@ function renderArchiveList(){
     const delBtn = document.createElement('button');
     delBtn.className = 'del-btn';
     delBtn.textContent = '삭제';
+    delBtn.classList.add('owner-only');
     delBtn.onclick = ()=>requestDeleteProject(p.id, tdActions, renderArchiveList);
     tdActions.append(restoreBtn, delBtn);
     tr.append(tdOwner, tdName, tdStatus, tdDate, tdActions);
@@ -5512,6 +5820,7 @@ async function exportBackup(){
 function importBackup(event){
   const file = event.target.files[0];
   if(!file) return;
+  if(!canDelete()){ denyDelete('save-status'); event.target.value = ''; return; }
   const statusEl = document.getElementById('save-status');
   const say = t => { if(statusEl) statusEl.textContent = t; };
   const reader = new FileReader();
@@ -5712,6 +6021,7 @@ function exportSnapshotsBackup(){
 }
 
 function importSnapshotsBackup(event){
+  if(!canDelete()){ denyDelete('snapshot-status'); event.target.value = ''; return; }
   const file = event.target.files[0];
   if(!file) return;
   const statusEl = document.getElementById('snapshot-status');
@@ -5811,6 +6121,7 @@ async function saveSnapshot(btn){
 }
 
 async function deleteSnapshot(week){
+  if(!canDelete()){ denyDelete('snapshot-status'); return; }
   await refreshSnapshots();
   snapshots = snapshots.filter(s=>s.week!==week);
   await saveSnapshotsList();
@@ -5881,6 +6192,7 @@ function renderSnapshots(){
     const delBtn = document.createElement('button');
     delBtn.className = 'del-btn';
     delBtn.textContent = '삭제';
+    delBtn.classList.add('owner-only');
     delBtn.onclick = ()=>armButton(delBtn, '⚠ 다시 누르면 삭제', ()=>deleteSnapshot(entry.week));
     tdActions.append(xlsxBtn, jsonBtn, delBtn);
     tr.append(tdWeek, tdTime, tdActions);
