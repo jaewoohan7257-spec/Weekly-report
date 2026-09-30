@@ -4615,52 +4615,48 @@ function exportProjectToExcel(){
   const proj = projects.find(p=>p.id===currentDetailId);
   if(!proj) return;
   downloadStyledSheet(projectToStyledRows(proj), proj.name + '_주간보고_' + todayStr() + '.xlsx', '주간보고',
-    wb => addGanttSheet(wb, proj));
+    wb => addGanttSheet(wb, [proj], {title: proj.name}));
 }
 
 // ===== 엑셀 간트 시트 (수정 가능) =====
 // 시작일·마감일·상태를 바꾸면 조건부 서식으로 막대가 자동으로 다시 칠해진다.
 // 주 단위 칸이라 하루짜리 짧은 일정도 최소 한 칸으로 보인다.
-function addGanttSheet(wb, proj){
+// grouped=true(팀 전체)면 프로젝트마다 요약 행(단계 일정의 처음~끝, 자동 계산) + 단계 행(접기 가능)으로 구성한다.
+function addGanttSheet(wb, projList, opts){
+  opts = opts || {};
+  const grouped = !!opts.grouped;
   const ymd = s => { const [y,m,d] = s.split('-').map(Number); return new Date(Date.UTC(y, m-1, d)); };
-  const steps = (proj.steps || []);
-  const dated = steps.filter(s => s.start && s.end && s.stage !== 'GATE 3');
-  const all = dated.length ? dated : steps.filter(s => s.start && s.end);
+  const serial = s => Math.round((ymd(s).getTime() - Date.UTC(1899,11,30)) / 86400000);
 
-  // 표시 기간: 가장 이른 시작 주 1주 전 ~ 가장 늦은 마감 + 4주 (수정 여유), 최대 80주
+  // 표시 기간: GATE 3(출시 6개월 뒤)는 기간을 과도하게 늘리므로 범위 계산에서 제외
+  const allSteps = [].concat(...projList.map(p => p.steps || []));
+  const ranged = allSteps.filter(st => st.start && st.end && st.stage !== 'GATE 3');
   const today = parseLocalDate(todayISO());
-  let minD = all.length ? parseLocalDate(all.map(s=>s.start).sort()[0]) : today;
-  let maxD = all.length ? parseLocalDate(all.map(s=>s.end).sort().slice(-1)[0]) : new Date(today.getTime() + 84*86400000);
-  const mon = d => { const x = new Date(d); x.setDate(x.getDate() - ((x.getDay()+6)%7)); return x; };
-  const startMon = mon(minD); startMon.setDate(startMon.getDate() - 7);
-  let weeks = Math.ceil((maxD - startMon) / (7*86400000)) + 5;
-  weeks = Math.min(Math.max(weeks, 12), 80);
+  const minD = ranged.length ? parseLocalDate(ranged.map(x=>x.start).sort()[0]) : today;
+  const maxD = ranged.length ? parseLocalDate(ranged.map(x=>x.end).sort().slice(-1)[0]) : new Date(today.getTime() + 84*86400000);
+  const startMon = new Date(minD); startMon.setDate(startMon.getDate() - ((startMon.getDay()+6)%7) - 7);
+  const weeks = Math.min(Math.max(Math.ceil((maxD - startMon) / (7*86400000)) + 5, 12), 104);
 
+  // 영업일 계산용 공휴일 — 별도 시트 없이 수식 안에 날짜값으로 넣는다
+  const holArr = '{' + [...KR_HOLIDAYS].sort().map(serial).join(',') + '}';
 
-  const ws = wb.addWorksheet('간트차트', {views:[{state:'frozen', xSplit:5, ySplit:3, showGridLines:false}],
-    pageSetup:{orientation:'landscape', paperSize:9, fitToPage:true, fitToWidth:1, fitToHeight:0}});
-  // 공휴일 시트 (영업일 계산용 — 간트 시트 뒤에 둔다)
-  const hs = wb.addWorksheet('공휴일');
-  hs.getCell('A1').value = '공휴일 (영업일 계산에서 제외 · 날짜를 추가해도 됩니다)';
-  hs.getCell('A1').font = {bold:true};
-  [...KR_HOLIDAYS].sort().forEach((h,i)=>{
-    const c = hs.getCell(i+2, 1); c.value = ymd(h); c.numFmt = 'yyyy-mm-dd';
+  const ws = wb.addWorksheet('간트차트', {
+    views:[{state:'frozen', xSplit:5, ySplit:3, showGridLines:false}],
+    pageSetup:{orientation:'landscape', paperSize:9, fitToPage:true, fitToWidth:1, fitToHeight:0},
+    properties:{outlineProperties:{summaryBelow:false}}
   });
-  hs.getColumn(1).width = 44;
-  const holRange = '공휴일!$A$2:$A$300';
-  const FIRST = 6;                         // F열부터 주 칸
-  const LAST = FIRST + weeks - 1;
-  const colL = n => { let s=''; while(n>0){ const m=(n-1)%26; s=String.fromCharCode(65+m)+s; n=Math.floor((n-1)/26); } return s; };
+  const FIRST = 6, LAST = FIRST + weeks - 1;
+  const colL = n => { let t=''; while(n>0){ const m=(n-1)%26; t=String.fromCharCode(65+m)+t; n=Math.floor((n-1)/26); } return t; };
   const fL = colL(FIRST), lL = colL(LAST);
 
-  ws.getColumn(1).width = 22; ws.getColumn(2).width = 8; ws.getColumn(3).width = 12;
+  ws.getColumn(1).width = grouped ? 40 : 22; ws.getColumn(2).width = 9; ws.getColumn(3).width = 12;
   ws.getColumn(4).width = 12; ws.getColumn(5).width = 8;
   for(let c=FIRST; c<=LAST; c++) ws.getColumn(c).width = 4.2;
 
   // 1행: 제목
   ws.mergeCells(1, 1, 1, Math.min(LAST, FIRST + 14));
   const t = ws.getCell(1,1);
-  t.value = proj.name + '  ·  일정 간트차트';
+  t.value = (opts.title || '') + '  ·  일정 간트차트';
   t.font = {bold:true, size:13, color:{argb:'FF2146C7'}};
   t.alignment = {vertical:'middle'};
   ws.getRow(1).height = 24;
@@ -4668,7 +4664,7 @@ function addGanttSheet(wb, proj){
   // 2~3행: 머리글 (2행 = 월, 3행 = 주 시작일)
   const HEAD_FILL = {type:'pattern', pattern:'solid', fgColor:{argb:'FF2146C7'}};
   const headFont = {bold:true, color:{argb:'FFFFFFFF'}, size:9};
-  ['단계','상태','시작일','마감일','영업일'].forEach((h,i)=>{
+  [grouped ? '프로젝트 / 단계' : '단계', grouped ? '상태·단계' : '상태', '시작일', '마감일', '영업일'].forEach((h,i)=>{
     ws.mergeCells(2, i+1, 3, i+1);
     const c = ws.getCell(2, i+1);
     c.value = h; c.fill = HEAD_FILL; c.font = Object.assign({}, headFont, {size:10});
@@ -4677,85 +4673,122 @@ function addGanttSheet(wb, proj){
   for(let c=FIRST; c<=LAST; c++){
     const cl = colL(c);
     const wk = ws.getCell(3, c);
-    if(c === FIRST){ wk.value = new Date(Date.UTC(startMon.getFullYear(), startMon.getMonth(), startMon.getDate())); }
-    else { wk.value = {formula: colL(c-1) + '3+7'}; }
-    wk.numFmt = 'm/d';
-    wk.fill = HEAD_FILL; wk.font = headFont;
+    wk.value = (c === FIRST) ? new Date(Date.UTC(startMon.getFullYear(), startMon.getMonth(), startMon.getDate()))
+                             : {formula: colL(c-1) + '3+7'};
+    wk.numFmt = 'm/d'; wk.fill = HEAD_FILL; wk.font = headFont;
     wk.alignment = {vertical:'middle', horizontal:'center', textRotation:90};
-    const mo = ws.getCell(2, c);
     // 좁은 칸에도 들어가도록 짧게: 첫 칸·1월은 '26.6' 형식, 그 외 달이 바뀌는 칸은 '7월'
     const label = 'IF(OR(' + (c === FIRST ? 'TRUE' : 'FALSE') + ',MONTH(' + cl + '3)=1),TEXT(' + cl + '3,"yy.m"),MONTH(' + cl + '3)&"월")';
+    const mo = ws.getCell(2, c);
     mo.value = {formula: c === FIRST ? label : 'IF(MONTH(' + cl + '3)<>MONTH(' + colL(c-1) + '3),' + label + ',"")'};
-    mo.fill = HEAD_FILL; mo.font = headFont;
-    mo.alignment = {vertical:'middle', horizontal:'left'};
+    mo.fill = HEAD_FILL; mo.font = headFont; mo.alignment = {vertical:'middle', horizontal:'left'};
   }
   ws.getRow(2).height = 16;
   ws.getRow(3).height = 34;
 
-  // 4행~: 단계별 행
   const thin = {style:'thin', color:{argb:'FFE7EAF0'}};
-  const firstRow = 4;
-  steps.forEach((st, i)=>{
-    const r = firstRow + i;
-    const row = ws.getRow(r);
-    row.height = 20;
-    ws.getCell(r,1).value = STAGE_LABEL[st.stage] || st.stage;
-    ws.getCell(r,1).font = {bold: st.stage.indexOf('GATE') === 0, size:10};
-    ws.getCell(r,2).value = st.status || '예정';
-    ws.getCell(r,2).dataValidation = {type:'list', allowBlank:true, formulae:['"예정,진행,완료"']};
-    ws.getCell(r,2).alignment = {horizontal:'center', vertical:'middle'};
-    [3,4].forEach(col=>{
-      const v = col === 3 ? st.start : st.end;
-      const c = ws.getCell(r, col);
-      if(v) c.value = ymd(v);
-      c.numFmt = 'yyyy-mm-dd';
-      c.alignment = {horizontal:'center', vertical:'middle'};
-      c.dataValidation = {type:'date', operator:'greaterThan', allowBlank:true,
-        formulae:[new Date(Date.UTC(2000,0,1))], showErrorMessage:true, errorTitle:'날짜 형식', error:'날짜를 yyyy-mm-dd 형식으로 입력해주세요.'};
-    });
-    ws.getCell(r,5).value = {formula:'IF(AND(C'+r+'<>"",D'+r+'<>""),NETWORKDAYS(C'+r+',D'+r+','+holRange+'),"")'};
-    ws.getCell(r,5).alignment = {horizontal:'center', vertical:'middle'};
+  const hair = {style:'hair', color:{argb:'FFE7EAF0'}};
+  const SUM_FILL = {type:'pattern', pattern:'solid', fgColor:{argb:'FFEEF3FF'}};
+  const dateCell = (c, v)=>{
+    if(v) c.value = ymd(v);
+    c.numFmt = 'yyyy-mm-dd';
+    c.alignment = {horizontal:'center', vertical:'middle'};
+  };
+  const workdays = r => ({formula:'IF(AND(ISNUMBER(C'+r+'),ISNUMBER(D'+r+')),NETWORKDAYS(C'+r+',D'+r+','+holArr+'),"")'});
+  const borderRow = (r, summary)=>{
     for(let c=1; c<=LAST; c++){
       const cell = ws.getCell(r, c);
-      cell.border = {top:thin, bottom:thin, left: c>=FIRST ? {style:'hair', color:{argb:'FFE7EAF0'}} : thin, right: c>=FIRST ? {style:'hair', color:{argb:'FFE7EAF0'}} : thin};
-      if(c <= 5 && !cell.alignment) cell.alignment = {vertical:'middle'};
+      cell.border = {top:thin, bottom:thin, left: c>=FIRST ? hair : thin, right: c>=FIRST ? hair : thin};
+      if(summary && c <= 5) cell.fill = SUM_FILL;
     }
+  };
+
+  let r = 4;
+  const firstRow = r;
+  projList.forEach(proj=>{
+    const steps = proj.steps || [];
+    let sumRow = null;
+    if(grouped){
+      // 프로젝트 요약 행: 단계 일정의 처음~끝을 수식으로 계산 (단계 날짜를 고치면 같이 바뀜)
+      sumRow = r;
+      const n = steps.length;
+      const g3i = steps.findIndex(x=>x.stage === 'GATE 3');
+      const lastIdx = (g3i > 0 ? g3i : n) - 1;           // GATE 3 제외
+      const rs = sumRow + 1, re = sumRow + 1 + Math.max(lastIdx, 0);
+      ws.getCell(r,1).value = '[' + proj.owner + '] ' + proj.name;
+      ws.getCell(r,1).font = {bold:true, size:10, color:{argb:'FF172033'}};
+      ws.getCell(r,1).alignment = {vertical:'middle', wrapText:false};
+      ws.getCell(r,2).value = proj.misc ? '기타' : currentStageOf(proj);
+      ws.getCell(r,2).font = {bold:true, size:9, color:{argb:'FF2146C7'}};
+      ws.getCell(r,2).alignment = {horizontal:'center', vertical:'middle'};
+      ws.getCell(r,3).value = {formula:'IF(COUNT(C'+rs+':C'+re+')=0,"",MIN(C'+rs+':C'+re+'))'};
+      ws.getCell(r,4).value = {formula:'IF(COUNT(D'+rs+':D'+re+')=0,"",MAX(D'+rs+':D'+re+'))'};
+      [3,4].forEach(col=>{ const c = ws.getCell(r,col); c.numFmt = 'yyyy-mm-dd'; c.font = {bold:true, size:10}; c.alignment = {horizontal:'center', vertical:'middle'}; });
+      ws.getCell(r,5).value = workdays(r);
+      ws.getCell(r,5).font = {bold:true, size:10};
+      ws.getCell(r,5).alignment = {horizontal:'center', vertical:'middle'};
+      ws.getRow(r).height = 20;
+      borderRow(r, true);
+      r++;
+    }
+    steps.forEach(st=>{
+      const row = ws.getRow(r);
+      row.height = 18;
+      if(grouped) row.outlineLevel = 1;
+      const c1 = ws.getCell(r,1);
+      c1.value = (grouped ? '    ' : '') + (STAGE_LABEL[st.stage] || st.stage);
+      c1.font = {bold: st.stage.indexOf('GATE') === 0, size: grouped ? 9 : 10, color:{argb: grouped ? 'FF475467' : 'FF172033'}};
+      c1.alignment = {vertical:'middle'};
+      const c2 = ws.getCell(r,2);
+      c2.value = st.status || '예정';
+      c2.dataValidation = {type:'list', allowBlank:true, formulae:['"예정,진행,완료"']};
+      c2.alignment = {horizontal:'center', vertical:'middle'};
+      dateCell(ws.getCell(r,3), st.start);
+      dateCell(ws.getCell(r,4), st.end);
+      ws.getCell(r,5).value = workdays(r);
+      ws.getCell(r,5).alignment = {horizontal:'center', vertical:'middle'};
+      borderRow(r, false);
+      r++;
+    });
   });
-  const lastRow = firstRow + steps.length - 1;
+  const lastRow = r - 1;
+
+  // 막대 색 (조건부 서식) — 완료/진행/예정은 단계 행, 그 외(단계명이 들어간 요약 행)는 파란색
   const area = fL + firstRow + ':' + lL + lastRow;
-  const tl = fL + firstRow;                 // 좌상단 셀 (상대 참조 기준)
-  const inBar = 'AND($C'+firstRow+'<>"",$D'+firstRow+'<>"",'+fL+'$3+6>=$C'+firstRow+','+fL+'$3<=$D'+firstRow+')';
+  const inBar = 'AND(ISNUMBER($C'+firstRow+'),ISNUMBER($D'+firstRow+'),'+fL+'$3+6>=$C'+firstRow+','+fL+'$3<=$D'+firstRow+')';
+  const B = '$B' + firstRow;
   const fill = argb => ({fill:{type:'pattern', pattern:'solid', bgColor:{argb}}});
   ws.addConditionalFormatting({ref: area, rules:[
-    {type:'expression', priority:1, formulae:['AND('+inBar+',$B'+firstRow+'="완료")'], style: fill('FF34D399')},
-    {type:'expression', priority:2, formulae:['AND('+inBar+',$B'+firstRow+'="진행")'], style: fill('FFF5A83C')},
-    {type:'expression', priority:3, formulae:[inBar], style: fill('FF8A94AD')},
-    {type:'expression', priority:4, formulae:['AND(TODAY()>='+fL+'$3,TODAY()<'+fL+'$3+7)'], style: fill('FFFDE2E2')},
+    {type:'expression', priority:1, formulae:['AND('+inBar+','+B+'="완료")'], style: fill('FF34D399')},
+    {type:'expression', priority:2, formulae:['AND('+inBar+','+B+'="진행")'], style: fill('FFF5A83C')},
+    {type:'expression', priority:3, formulae:['AND('+inBar+','+B+'="예정")'], style: fill('FF8A94AD')},
+    {type:'expression', priority:4, formulae:[inBar], style: fill('FF315EF6')},
+    {type:'expression', priority:5, formulae:['AND(TODAY()>='+fL+'$3,TODAY()<'+fL+'$3+7)'], style: fill('FFFDE2E2')},
   ]});
-  // 상태 칸 색
   ws.addConditionalFormatting({ref:'B'+firstRow+':B'+lastRow, rules:[
-    {type:'cellIs', operator:'equal', priority:5, formulae:['"완료"'], style:{font:{bold:true, color:{argb:'FF087457'}}, fill:{type:'pattern', pattern:'solid', bgColor:{argb:'FFE9F8F3'}}}},
-    {type:'cellIs', operator:'equal', priority:6, formulae:['"진행"'], style:{font:{bold:true, color:{argb:'FF9A650B'}}, fill:{type:'pattern', pattern:'solid', bgColor:{argb:'FFFFF5DE'}}}},
+    {type:'cellIs', operator:'equal', priority:6, formulae:['"완료"'], style:{font:{bold:true, color:{argb:'FF087457'}}, fill:{type:'pattern', pattern:'solid', bgColor:{argb:'FFE9F8F3'}}}},
+    {type:'cellIs', operator:'equal', priority:7, formulae:['"진행"'], style:{font:{bold:true, color:{argb:'FF9A650B'}}, fill:{type:'pattern', pattern:'solid', bgColor:{argb:'FFFFF5DE'}}}},
   ]});
-  // 오늘 주 머리글 강조
   ws.addConditionalFormatting({ref: fL+'3:'+lL+'3', rules:[
-    {type:'expression', priority:7, formulae:['AND(TODAY()>='+fL+'$3,TODAY()<'+fL+'$3+7)'], style:{fill:{type:'pattern', pattern:'solid', bgColor:{argb:'FFD84A4A'}}}},
+    {type:'expression', priority:8, formulae:['AND(TODAY()>='+fL+'$3,TODAY()<'+fL+'$3+7)'], style:{fill:{type:'pattern', pattern:'solid', bgColor:{argb:'FFD84A4A'}}}},
   ]});
 
-  // 범례
+  // 범례·안내
   const lg = lastRow + 2;
-  const legend = [['완료','FF34D399'],['진행','FFF5A83C'],['예정','FF8A94AD'],['이번 주','FFFDE2E2']];
+  const legend = [['완료','FF34D399'],['진행','FFF5A83C'],['예정','FF8A94AD']].concat(grouped ? [['프로젝트 전체','FF315EF6']] : []).concat([['이번 주','FFFDE2E2']]);
   ws.getCell(lg,1).value = '범례'; ws.getCell(lg,1).font = {bold:true, size:9};
   legend.forEach(([name, col], i)=>{
     const c = ws.getCell(lg, 2 + i);
     c.value = name; c.font = {size:9, bold:true, color:{argb: name==='이번 주' ? 'FFD84A4A' : 'FFFFFFFF'}};
     c.fill = {type:'pattern', pattern:'solid', fgColor:{argb:col}};
-    c.alignment = {horizontal:'center'};
+    c.alignment = {horizontal:'center', shrinkToFit:true};
   });
-  ws.getCell(lg+1,1).value = '※ 상태·시작일·마감일을 고치면 막대가 자동으로 바뀝니다. ' + fL + '3 칸(첫 주 시작일)을 바꾸면 표 전체 기간이 이동합니다.';
-  ws.getCell(lg+2,1).value = '※ 주 단위 칸이라 며칠짜리 짧은 일정도 한 칸 이상으로 표시돼요. 영업일은 주말·공휴일(공휴일 시트)을 뺀 일수예요.';
-  [lg+1, lg+2].forEach(rr=>{ ws.getCell(rr,1).font = {size:9, color:{argb:'FF667085'}}; });
-
+  const notes = [
+    '※ 상태·시작일·마감일을 고치면 막대가 자동으로 바뀝니다. ' + fL + '3 칸(첫 주 시작일)을 바꾸면 표 전체 기간이 이동합니다.',
+    '※ 주 단위 칸이라 며칠짜리 짧은 일정도 한 칸 이상으로 표시돼요. 영업일은 주말·공휴일을 뺀 일수예요.'
+  ];
+  if(grouped) notes.push('※ 프로젝트 행(파란색)은 아래 단계 일정(GATE 3 제외)의 처음~끝을 자동 계산해요. 왼쪽 [−] 버튼으로 단계 행을 접어 프로젝트만 볼 수 있어요.');
+  notes.forEach((txt, i)=>{ const c = ws.getCell(lg+1+i, 1); c.value = txt; c.font = {size:9, color:{argb:'FF667085'}}; });
 }
 
 function exportAllToExcel(){
@@ -4766,7 +4799,8 @@ function exportAllToExcel(){
   }
   const rows = [];
   activeProjects.forEach(p=>{ rows.push(...projectToStyledRows(p)); });
-  downloadStyledSheet(rows, teamLabel().split(' ').join('') + '_전체안건_' + todayStr() + '.xlsx', '주간보고');
+  downloadStyledSheet(rows, teamLabel().split(' ').join('') + '_전체안건_' + todayStr() + '.xlsx', '주간보고',
+    wb => addGanttSheet(wb, activeProjects, {title: teamLabel() + ' 전체 안건', grouped: true}));
 }
 
 function exportArchivedToExcel(){
