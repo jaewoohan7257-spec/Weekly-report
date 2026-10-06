@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>상품마케팅2팀 주간보고 - 제품 개발 파이프라인</title>
+<title>SAMJIN 상품마케팅팀 Weekly Report</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap">
@@ -2146,13 +2146,14 @@ if(FIREBASE_OK){
 // ===== 로그인·권한 =====
 // 관리자(OWNER_EMAIL): 모든 기능 + 삭제 / 등록된 팀원: 조회·추가·수정·보관함 이관 / 그 외: 접근 불가
 // 실제 차단은 Firebase 보안 규칙이 하고, 화면은 권한에 맞게 버튼만 숨긴다.
-const AUTH = { enabled: AUTH_CONFIGURED, user: null, email: '', isOwner: !AUTH_CONFIGURED, isMember: !AUTH_CONFIGURED };
+const AUTH = { enabled: AUTH_CONFIGURED, user: null, email: '', isOwner: !AUTH_CONFIGURED, isAdmin: !AUTH_CONFIGURED, isMember: !AUTH_CONFIGURED };
 let _gateResolve;
 AUTH.gate = new Promise(res => { _gateResolve = res; });
 if(!FIREBASE_OK) _gateResolve();          // 로컬(미리보기)에서는 바로 사용
-function canDelete(){ return !AUTH.enabled || AUTH.isOwner; }
+// 삭제 권한: 총괄 관리자 + 총괄 관리자가 '삭제 권한'을 준 관리자
+function canDelete(){ return !AUTH.enabled || AUTH.isAdmin; }
 function denyDelete(msgElId){
-  const t = '🔒 삭제·초기화·백업 복원은 관리자만 할 수 있어요.';
+  const t = '🔒 삭제·초기화·백업 복원은 삭제 권한이 있는 관리자만 할 수 있어요.';
   const el = msgElId && document.getElementById(msgElId);
   if(el) el.textContent = t; else alert(t);
 }
@@ -2379,7 +2380,7 @@ function showIdleWarn(minLeft){
   document.body.appendChild(w);
 }
 function checkOwnerIdle(){
-  if(!AUTH.enabled || !AUTH.isOwner) return;
+  if(!AUTH.enabled || !AUTH.isAdmin) return;
   const idleMs = Date.now() - lastActivity();
   const limit = OWNER_IDLE_MIN * 60000;
   if(idleMs >= limit){ authSignOut('idle'); return; }
@@ -2407,7 +2408,14 @@ if(AUTH_CONFIGURED){
     AUTH.user = user;
     AUTH.email = String(user.email || '').toLowerCase();
     AUTH.isOwner = AUTH.email === OWNER;
-    if(!AUTH.isOwner){
+    if(AUTH.isOwner){ AUTH.isAdmin = true; }
+    else {
+      try{
+        const a = await _fbdb.ref(FIREBASE_ROOT + '/admins/' + emailKey(AUTH.email)).once('value');
+        AUTH.isAdmin = a.val() === true;
+      }catch(e){ AUTH.isAdmin = false; }
+    }
+    if(!AUTH.isAdmin){
       try{
         const s = await _fbdb.ref(FIREBASE_ROOT + '/members/' + emailKey(AUTH.email)).once('value');
         AUTH.isMember = s.val() === true;
@@ -2440,9 +2448,9 @@ function applyRoleUI(){
     bar.innerHTML = '';
     const who = document.createElement('span');
     who.className = 'auth-who';
-    who.innerHTML = '<span class="auth-role ' + (AUTH.isOwner ? 'owner' : 'member') + '">' + (AUTH.isOwner ? '관리자' : '팀원') + '</span> ';
+    who.innerHTML = '<span class="auth-role ' + (AUTH.isAdmin ? 'owner' : 'member') + '">' + (AUTH.isOwner ? '총괄 관리자' : (AUTH.isAdmin ? '관리자' : '팀원')) + '</span> ';
     who.appendChild(document.createTextNode(AUTH.email));
-    who.title = AUTH.isOwner ? ('브라우저를 닫거나 ' + OWNER_IDLE_MIN + '분 동안 사용하지 않으면 자동 로그아웃돼요') : '브라우저를 닫으면 로그아웃돼요';
+    who.title = AUTH.isAdmin ? ('브라우저를 닫거나 ' + OWNER_IDLE_MIN + '분 동안 사용하지 않으면 자동 로그아웃돼요') : '브라우저를 닫으면 로그아웃돼요';
     bar.appendChild(who);
     if(AUTH.isOwner){
       const mb = document.createElement('button'); mb.textContent = '👥 팀원·권한 관리'; mb.onclick = toggleMemberPanel;
@@ -2458,16 +2466,20 @@ if(!AUTH_CONFIGURED) window.addEventListener('DOMContentLoaded', applyRoleUI);
 // ===== 관리자: 팀원 등록 + 보안 규칙 =====
 function buildSecurityRules(){
   const E = "auth.token.email.toLowerCase()";
+  const K = E + ".replace('.', ',')";
   const isOwner = "(auth != null && auth.token.email_verified === true && " + E + " === '" + OWNER + "')";
-  const isMember = "(auth != null && auth.token.email_verified === true && (" + E + " === '" + OWNER + "' || root.child('dashboard/members').child(" + E + ".replace('.', ',')).val() === true))";
-  const ownerOnly = {".write": isOwner};
+  const isAdmin = "(auth != null && auth.token.email_verified === true && (" + E + " === '" + OWNER + "' || root.child('dashboard/admins').child(" + K + ").val() === true))";
+  const isMember = "(auth != null && auth.token.email_verified === true && (" + E + " === '" + OWNER + "' || root.child('dashboard/admins').child(" + K + ").val() === true || root.child('dashboard/members').child(" + K + ").val() === true))";
+  const adminOnly = {".write": isAdmin};
   return JSON.stringify({rules: {dashboard: {
     ".read": isMember,
     "members": {".read": isOwner, ".write": isOwner,
-                "$ek": {".read": "auth != null && " + E + ".replace('.', ',') === $ek"}},
-    "projects":  {"$pid": {".write": isMember + " && (newData.exists() || " + isOwner + ")"}},
-    "snapshots": {"$sid": {".write": isMember + " && (newData.exists() || " + isOwner + ")"}},
-    "projects_v2": ownerOnly, "snapshots_v1": ownerOnly, "delete_pin_v1": ownerOnly,
+                "$ek": {".read": "auth != null && " + K + " === $ek"}},
+    "admins":  {".read": isOwner, ".write": isOwner,
+                "$ek": {".read": "auth != null && " + K + " === $ek"}},
+    "projects":  {"$pid": {".write": isMember + " && (newData.exists() || " + isAdmin + ")"}},
+    "snapshots": {"$sid": {".write": isMember + " && (newData.exists() || " + isAdmin + ")"}},
+    "projects_v2": adminOnly, "snapshots_v1": adminOnly, "delete_pin_v1": adminOnly,
     "$other": {".write": isMember}
   }}}, null, 2);
 }
@@ -2478,10 +2490,10 @@ async function toggleMemberPanel(){
   p.id = 'member-panel';
   p.innerHTML =
     '<div class="mp-card"><div class="mp-head"><b>👥 팀원·권한 관리</b><button onclick="toggleMemberPanel()">닫기</button></div>' +
-    '<p class="mp-desc">등록된 팀원은 조회·추가·수정·보관함 이관을 할 수 있어요. <b>프로젝트 삭제 · 초기화 · 백업 불러오기 · 스냅샷 삭제</b>는 관리자(' + OWNER + ')만 할 수 있어요.</p>' +
+    '<p class="mp-desc">등록된 팀원은 조회·추가·수정(프로젝트명 포함)·보관함 이관을 할 수 있어요. <b>프로젝트 삭제 · 초기화 · 백업 불러오기 · 스냅샷 삭제</b>는 <b>삭제 권한</b>이 있는 관리자만 할 수 있어요. 팀원·권한 관리는 총괄 관리자(' + OWNER + ')만 할 수 있어요.</p>' +
     '<div class="mp-add"><input id="mp-email" type="email" placeholder="팀원 구글 이메일 (예: name@gmail.com)"><button class="primary" onclick="addMember()">등록</button></div>' +
     '<div id="mp-list" class="mp-list">불러오는 중...</div><p id="mp-msg" class="mp-msg"></p>' +
-    '<details class="mp-rules"><summary>🛡️ Firebase 보안 규칙 (처음 한 번 콘솔에 붙여넣기)</summary>' +
+    '<details class="mp-rules"><summary>🛡️ Firebase 보안 규칙 (규칙이 바뀐 버전을 받았을 때만 다시 붙여넣기)</summary>' +
     '<p class="mp-desc">Firebase 콘솔 › Realtime Database › 규칙 탭에 아래 내용을 통째로 붙여넣고 [게시]를 누르세요. 팀원 등록을 먼저 마친 뒤 게시하는 것을 권해요.</p>' +
     '<textarea id="mp-rules" readonly></textarea><button onclick="copyRules()">규칙 복사</button></details></div>';
   document.body.appendChild(p);
@@ -2491,19 +2503,36 @@ async function toggleMemberPanel(){
 async function renderMemberList(){
   const box = document.getElementById('mp-list'); if(!box) return;
   try{
-    const s = await _fbdb.ref(FIREBASE_ROOT + '/members').once('value');
-    const keys = Object.keys(s.val() || {}).filter(k => (s.val() || {})[k] === true).sort();
+    const [s, a] = await Promise.all([_fbdb.ref(FIREBASE_ROOT + '/members').once('value'), _fbdb.ref(FIREBASE_ROOT + '/admins').once('value')]);
+    const mv = s.val() || {}, av = a.val() || {};
+    const keys = [...new Set(Object.keys(mv).filter(k => mv[k] === true).concat(Object.keys(av).filter(k => av[k] === true)))].sort();
     box.innerHTML = '';
     const ownerRow = document.createElement('div'); ownerRow.className = 'mp-row';
-    ownerRow.innerHTML = '<span>' + OWNER + '</span><span class="auth-role owner">관리자</span>';
+    ownerRow.innerHTML = '<span>' + OWNER + '</span><span class="auth-role owner">총괄 관리자</span>';
     box.appendChild(ownerRow);
     keys.forEach(k=>{
       const email = k.replace(/,/g, '.');
+      const isAdm = av[k] === true;
       const row = document.createElement('div'); row.className = 'mp-row';
       const sp = document.createElement('span'); sp.textContent = email;
+      if(isAdm){ const bd = document.createElement('span'); bd.className = 'auth-role owner'; bd.style.marginLeft = '6px'; bd.textContent = '삭제 권한'; sp.appendChild(bd); }
+      const act = document.createElement('span'); act.style.cssText = 'display:inline-flex;gap:6px';
+      const ad = document.createElement('button');
+      ad.textContent = isAdm ? '삭제 권한 회수' : '삭제 권한 부여';
+      ad.onclick = async ()=>{
+        if(isAdm) await _fbdb.ref(FIREBASE_ROOT + '/admins/' + k).remove();
+        else { await _fbdb.ref(FIREBASE_ROOT + '/members/' + k).set(true); await _fbdb.ref(FIREBASE_ROOT + '/admins/' + k).set(true); }
+        document.getElementById('mp-msg').textContent = email + (isAdm ? ' 삭제 권한을 회수했어요.' : ' 에게 삭제 권한을 줬어요. (다음 로그인부터 적용)');
+        renderMemberList();
+      };
       const rm = document.createElement('button'); rm.textContent = '해제';
-      rm.onclick = async ()=>{ await _fbdb.ref(FIREBASE_ROOT + '/members/' + k).remove(); renderMemberList(); };
-      row.append(sp, rm); box.appendChild(row);
+      rm.onclick = async ()=>{
+        await _fbdb.ref(FIREBASE_ROOT + '/admins/' + k).remove();
+        await _fbdb.ref(FIREBASE_ROOT + '/members/' + k).remove();
+        renderMemberList();
+      };
+      act.append(ad, rm);
+      row.append(sp, act); box.appendChild(row);
     });
     if(!keys.length){ const e = document.createElement('p'); e.className = 'mp-desc'; e.textContent = '아직 등록된 팀원이 없어요.'; box.appendChild(e); }
   }catch(e){ box.textContent = '목록을 불러오지 못했어요: ' + (e.code || e.message); }
@@ -3033,6 +3062,8 @@ function startInlineRename(tdName, p){
     const val = input.value.trim();
     if(val && val !== p.name){
       p.name = val;
+      p.updatedAt = new Date().toISOString();
+      markDirty(p.id);                 // 바뀐 항목으로 표시해야 저장 시 반영된다
       saveData('save-status');
     }
     render();
@@ -3051,6 +3082,8 @@ function renameProject(id, newName){
   const proj = projects.find(p=>p.id===id);
   if(!proj) return;
   proj.name = newName;
+  proj.updatedAt = new Date().toISOString();
+  markDirty(proj.id);                  // 바뀐 항목으로 표시해야 저장 시 반영된다
   saveData('d-save-status');
 }
 
