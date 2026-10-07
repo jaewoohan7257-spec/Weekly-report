@@ -1609,6 +1609,96 @@ table{border:1px solid var(--line)!important;border-radius:14px!important;overfl
 }
 </style>
 <style id="app-feature-styles">
+
+/* ===================== 휴대폰 모드 ===================== */
+#m-tabbar,.m-only{display:none}
+@media (max-width:760px){
+  .m-hide{display:none!important}
+  html body #list-view > .footer-actions.m-hide, html body #list-view .m-hide{display:none!important}
+  *:has(> #recalc-anchor){flex-wrap:wrap!important;gap:8px}
+  #recalc-anchor{max-width:100%;width:100%!important;flex:1 1 100%}
+  .m-only{display:block}
+  body{padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))!important}
+  #m-tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:900;background:rgba(255,255,255,.97);backdrop-filter:blur(10px);
+    border-top:1px solid #e3e8f0;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));box-shadow:0 -6px 20px rgba(16,24,40,.06)}
+  #m-tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;box-shadow:none;padding:6px 0;color:#7d8794;font-size:11.5px;font-weight:700;border-radius:10px}
+  #m-tabbar button .ic{font-size:19px;line-height:1}
+  #m-tabbar button.on{color:#2146C7;background:#EEF3FF}
+  body.m-detail #m-tabbar{display:none}
+  #share-bar{bottom:calc(84px + env(safe-area-inset-bottom,0px))!important}
+  body.m-detail #share-bar{bottom:12px!important}
+  .scroll-fab{bottom:calc(90px + env(safe-area-inset-bottom,0px))!important}
+
+  /* 머리글 간소화 */
+  #page-title{font-size:24px!important}
+  #list-view > .footer-actions:first-child > button{display:none!important}
+  #list-view > .footer-actions:first-child .sub{font-size:13px}
+  .team-tabs{width:100%}
+  .team-tabs button{flex:1;padding:8px 6px!important;font-size:13px!important}
+
+  /* 프로젝트 목록: 표 대신 카드 */
+  body[data-mtab="mine"] .tbl-scroll.w-list, body[data-mtab="all"] .tbl-scroll.w-list{display:none}
+  #project-list-panel .add-row{grid-template-columns:1fr 1fr!important}
+  #project-list-panel .add-row #proj-search{grid-column:1 / -1}
+  #m-cards{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+  .m-card{background:#fff;border:1px solid #e3e8f0;border-radius:14px;padding:14px 14px 10px;box-shadow:0 2px 8px rgba(16,24,40,.04);cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .m-card:active{background:#f7f9ff}
+  .m-card.shared{box-shadow:inset 4px 0 0 #0E8F83,0 2px 8px rgba(16,24,40,.04)}
+  .m-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+  .m-stage{font-size:12px;font-weight:800;color:#2146C7}
+  .m-type{font-size:11px;font-weight:700;color:#475467;background:#f2f4f8;border-radius:6px;padding:1px 7px}
+  .m-key{font-size:11px;font-weight:800;color:#C9741F}
+  .m-name{font-size:16px;line-height:1.35;margin:0 0 4px;font-weight:800;color:#172033;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .m-meta{font-size:12.5px;color:#7d8794}
+  .m-meta .over{color:#B42318;font-weight:800}.m-meta .soon{color:#C9741F;font-weight:800}
+  .m-latest{font-size:13px;line-height:1.5;color:#344054;margin:8px 0 0;padding:7px 10px;background:#f7f9fc;border-radius:8px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .m-foot{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+  .m-ago{font-size:11.5px;color:#98a2b3}
+  .m-share{flex-direction:row!important}
+  .m-empty{padding:30px;text-align:center;color:#98a2b3}
+  #m-mine-bar{margin:0 0 10px}
+  .m-mine-title{font-size:14px;margin-bottom:8px;color:#344054}
+  .m-chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+  .m-chip{flex:0 0 auto;border-radius:999px;padding:6px 14px;font-size:13px;font-weight:700;background:#fff;border:1px solid #e3e8f0;color:#475467}
+  .m-chip.on{background:#2146C7;border-color:#2146C7;color:#fff}
+
+  /* 목록 아래 관리자 도구(삭제 PIN·초기화)는 PC에서 */
+  #project-list-panel *:has(> #reset-all-wrap){display:none!important}
+  /* 홈 요약 숫자: 2열 */
+  #list-view > .metrics{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important}
+  #list-view > .metrics > *{min-width:0;padding:12px!important}
+  /* 프로젝트 추가: 버튼을 눌러야 펼쳐짐 */
+  .m-add-toggle{display:block;width:100%;padding:12px;font-size:14px;font-weight:800;border-radius:12px;background:#EEF3FF;color:#2146C7;border:1px dashed #9db4fa}
+  #add-panel:not(.m-open) > :not(.m-add-toggle){display:none!important}
+  #add-panel{padding:12px!important}
+  #add-panel .add-row{grid-template-columns:1fr!important;margin-top:10px}
+
+  /* 더보기: 도구 모음 */
+  .m-tool-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .m-tool-grid button{padding:12px 8px;font-size:13.5px}
+
+  /* 담당자별 현황 카드: 한 줄에 1개, 긴 이름은 말줄임 */
+  #owner-analysis-grid{grid-template-columns:1fr!important;display:grid!important}
+  .owner-card{min-width:0!important;max-width:100%!important;width:auto!important}
+  .owner-card *{min-width:0}
+  .owner-card a,.owner-card li,.owner-card .oa-proj,.owner-card [class*="proj"]{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+
+  /* 타임라인: 좌우 스크롤 */
+  .timeline-panel{overflow:hidden}
+  .timeline-panel .wg-wrap,.timeline-panel #timeline-chart{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+
+  /* 상세 화면: 단계별 표를 카드처럼 세로로 */
+  .tbl-scroll.w-steps > table{min-width:0!important}
+  .tbl-scroll.w-steps::after{content:none!important}
+  .tbl-scroll.w-steps thead{display:none}
+  .tbl-scroll.w-steps table,.tbl-scroll.w-steps tbody,.tbl-scroll.w-steps tr,.tbl-scroll.w-steps td{display:block;width:100%!important}
+  .tbl-scroll.w-steps tr{border:1px solid #e3e8f0;border-radius:12px;margin-bottom:10px;padding:10px 12px;background:#fff}
+  .tbl-scroll.w-steps td{border:none!important;padding:4px 0!important}
+  .tbl-scroll.w-steps td textarea{width:100%;min-height:64px}
+  .tbl-scroll.w-steps td:nth-child(n+3){display:inline-block;width:auto!important;margin-right:6px;vertical-align:top}
+  .tbl-scroll.w-steps td:nth-child(n+3) input[type=date]{width:150px}
+}
+
 /* ===== 휴대폰·태블릿 ===== */
 .tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
 @media (max-width:1100px){
@@ -3541,9 +3631,11 @@ function showDetail(id){
   // 상세로 들어갈 때는 항상 최상단부터 보이도록 (애니메이션 없이 바로)
   instantScroll(()=> window.scrollTo({top:0, left:0, behavior:'instant'}));
   syncDetailTopbar();
+  document.body.classList.add('m-detail');
 }
 
 function showList(){
+  document.body.classList.remove('m-detail');
   currentDetailId = null;
   document.getElementById('detail-view').style.display = 'none';
   document.getElementById('list-view').style.display = 'block';
@@ -4639,6 +4731,163 @@ function renderMemoSummary(td, content, updatedAt, key){
   td.title = content || '';
 }
 
+
+// =====================================================================
+// 휴대폰 모드 (화면 폭 760px 이하에서만 적용, PC 화면은 그대로)
+// 아래 탭: 홈 · 내 업무 · 전체 · 더보기  /  목록은 카드형  /  분석 화면은 '더보기'로
+// =====================================================================
+const M_QUERY = window.matchMedia('(max-width: 760px)');
+const isPhone = () => M_QUERY.matches;
+let mTab = 'home';
+try{ mTab = sessionStorage.getItem('m_tab') || 'home'; }catch(e){}
+function myOwnerName(){ try{ return localStorage.getItem('m_my_owner') || ''; }catch(e){ return ''; } }
+function setMyOwnerName(n){ try{ localStorage.setItem('m_my_owner', n || ''); }catch(e){} }
+
+// 화면 조각마다 어느 탭에 보일지 표시 (홈/내업무/전체/더보기)
+function tagMobileSections(){
+  const lv = document.getElementById('list-view'); if(!lv || lv.dataset.mTagged) return;
+  lv.dataset.mTagged = '1';
+  const set = (el, tabs)=>{ if(el) el.dataset.m = tabs; };
+  const kids = [...lv.children];
+  kids.forEach(el=>{
+    const h2 = el.querySelector && el.querySelector(':scope > h2, :scope > .panel-head h2, h2');
+    const title = h2 ? h2.textContent : '';
+    if(el.id === 'team-tabs') return set(el, 'home mine all');
+    if(el.id === 'team-page-hero' || el.id === 'live-status' || el.id === 'new-overdue-banner') return set(el, 'home');
+    if(el.id === 'sec-nav' || el.classList.contains('sec-nav')) return set(el, 'none');
+    if(el.classList.contains('metrics')) return set(el, 'home');
+    if(el.id === 'priority-panel') return set(el, 'home');
+    if(el.id === 'project-list-panel') return set(el, 'mine all');
+    if(el.id === 'add-panel') return set(el, 'all');
+    if(el.classList.contains('footer-actions') && el.querySelector('#page-title')) return set(el, 'home');
+    if(el.classList.contains('panel') || el.classList.contains('footer-actions') || el.classList.contains('status-msg')) return set(el, 'more');
+  });
+  // 더보기 탭 맨 위: 보고서·내보내기 버튼 모음
+  const tools = document.createElement('div');
+  tools.className = 'panel m-tools'; tools.dataset.m = 'more';
+  tools.innerHTML = '<h2>보고서 · 내보내기</h2>' +
+    '<div class="m-tool-grid">' +
+    '<button class="primary" onclick="generateReportPPT(this)">📊 보고서 PPT</button>' +
+    '<button onclick="exportAllToExcel()">⬇ 팀 전체 엑셀</button>' +
+    '<button onclick="togglePptSettings()">⚙️ PPT 설정</button>' +
+    '<button onclick="manualRefresh()">🔄 새로고침</button></div>' +
+    '<p class="status-msg" style="margin:8px 0 0">아래 분석 화면(포트폴리오·담당자별·타임라인 등)은 PC 화면과 같아요. 제목을 눌러 펼쳐보세요.</p>';
+  const firstMore = kids.find(el => el.dataset.m === 'more');
+  lv.insertBefore(tools, firstMore || null);
+  // 프로젝트 목록 패널 안: 내 업무 담당자 선택 + 카드 목록 + 추가 버튼
+  const plp = document.getElementById('project-list-panel');
+  if(plp){
+    const who = document.createElement('div'); who.id = 'm-mine-bar'; who.className = 'm-only';
+    plp.insertBefore(who, plp.children[1] || null);
+    const cards = document.createElement('div'); cards.id = 'm-cards'; cards.className = 'm-only';
+    plp.appendChild(cards);
+  }
+  const add = document.getElementById('add-panel');
+  if(add){
+    const t = document.createElement('button'); t.className = 'm-only m-add-toggle'; t.type = 'button';
+    t.textContent = '＋ 새 프로젝트 추가';
+    t.onclick = ()=>{ add.classList.toggle('m-open'); t.textContent = add.classList.contains('m-open') ? '닫기' : '＋ 새 프로젝트 추가'; };
+    add.insertBefore(t, add.firstChild);
+  }
+  // 아래 탭 바
+  const bar = document.createElement('nav'); bar.id = 'm-tabbar'; bar.setAttribute('aria-label', '휴대폰 메뉴');
+  [['home','🏠','홈'],['mine','👤','내 업무'],['all','📋','전체'],['more','☰','더보기']].forEach(([k, ic, lb])=>{
+    const b = document.createElement('button'); b.type = 'button'; b.dataset.tab = k;
+    b.innerHTML = '<span class="ic">' + ic + '</span><span class="lb">' + lb + '</span>';
+    b.onclick = ()=> setMobileTab(k);
+    bar.appendChild(b);
+  });
+  document.body.appendChild(bar);
+}
+
+function applyMobileTab(){
+  const lv = document.getElementById('list-view'); if(!lv) return;
+  lv.querySelectorAll('[data-m]').forEach(el=>{
+    const tabs = el.dataset.m.split(' ');
+    el.classList.toggle('m-hide', !tabs.includes(mTab));
+  });
+  document.querySelectorAll('#m-tabbar button').forEach(b => b.classList.toggle('on', b.dataset.tab === mTab));
+  document.body.dataset.mtab = mTab;
+}
+function setMobileTab(k){
+  if(currentDetailId !== null && typeof showList === 'function') showList();
+  mTab = k;
+  try{ sessionStorage.setItem('m_tab', k); }catch(e){}
+  // 내 업무 = 내 이름으로 담당자 필터, 전체 = 필터 해제
+  if(k === 'mine'){ const me = myOwnerName(); activeOwner = me || '전체'; }
+  else if(k === 'all' || k === 'home'){ if(activeOwner !== '전체' && activeOwner === myOwnerName()) activeOwner = '전체'; }
+  applyMobileTab();
+  render();
+  window.scrollTo({top:0, left:0, behavior:'instant'});
+}
+
+function renderMobileMineBar(){
+  const box = document.getElementById('m-mine-bar'); if(!box) return;
+  if(mTab !== 'mine'){ box.innerHTML = ''; return; }
+  const owners = [...new Set(projects.filter(isActive).filter(inTeam).map(p => p.owner))].sort((a,b)=>a.localeCompare(b));
+  const me = myOwnerName();
+  box.innerHTML = '<div class="m-mine-title">' + (me ? '<b>' + me + '</b>님 담당 프로젝트' : '내 이름을 골라주세요 (이 기기에 기억돼요)') + '</div>';
+  const row = document.createElement('div'); row.className = 'm-chips';
+  owners.forEach(o=>{
+    const c = document.createElement('button'); c.type = 'button'; c.className = 'm-chip' + (o === me ? ' on' : ''); c.textContent = o;
+    c.onclick = ()=>{ setMyOwnerName(o); activeOwner = o; render(); };
+    row.appendChild(c);
+  });
+  box.appendChild(row);
+}
+
+function nextDueOf(p){
+  const st = p.steps.find(s => s.stage === currentStageOf(p));
+  if(!st || !st.end) return null;
+  const n = Math.round((parseLocalDate(st.end) - parseLocalDate(todayISO())) / 86400000);
+  return {label: (STAGE_LABEL[st.stage] || st.stage), end: st.end, n};
+}
+function renderMobileCards(list){
+  const box = document.getElementById('m-cards'); if(!box) return;
+  renderMobileMineBar();
+  if(!isPhone()){ box.innerHTML = ''; return; }
+  if(mTab === 'mine' && !myOwnerName()){ box.innerHTML = ''; return; }
+  box.innerHTML = '';
+  if(!list.length){ box.innerHTML = '<div class="m-empty">조건에 맞는 프로젝트가 없어요.</div>'; return; }
+  list.forEach(p=>{
+    const card = document.createElement('article');
+    card.className = 'm-card' + (p.salesShare ? ' shared' : '');
+    card.tabIndex = 0;
+    const overdue = p.steps.some(isOverdue), soon = p.steps.some(s => isUpcoming(s));
+    const light = overdue ? 'red' : (soon || progressOf(p) === 0 ? 'yellow' : 'green');
+    const due = nextDueOf(p);
+    const cs = p.steps.find(s => s.stage === currentStageOf(p));
+    const latest = cs && cs.content ? parseMemo(cs.content)[0] : null;
+    const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    card.innerHTML =
+      '<div class="m-top"><span class="tlight ' + light + '"></span>' +
+        '<span class="m-stage">' + esc(STAGE_LABEL[currentStageOf(p)] || '') + '</span>' +
+        (p.productType ? '<span class="m-type">' + esc(p.productType) + '</span>' : '') +
+        (p.tier === 'key' ? '<span class="m-key">★ 핵심</span>' : '') + '</div>' +
+      '<h3 class="m-name">' + esc(p.name) + '</h3>' +
+      '<div class="m-meta">' + esc(p.owner) + ' · 진행률 ' + progressOf(p) + '%' +
+        (due ? ' · <span class="' + (due.n < 0 ? 'over' : (due.n <= 7 ? 'soon' : '')) + '">' + (due.n < 0 ? (-due.n) + '일 지연' : (due.n === 0 ? '오늘 마감' : 'D-' + due.n)) + '</span>' : '') + '</div>' +
+      (latest ? '<p class="m-latest">' + (latest.label ? '<b>' + esc(latest.label) + '</b> ' : '') + esc(latest.text) +
+        (latest.tag ? ' <span class="memo-tag t-' + latest.tag + '">' + MEMO_TAGS[latest.tag].label + '</span>' : '') + '</p>' : '') +
+      '<div class="m-foot"><span class="m-ago">' + esc(updatedAgoText(daysSinceISO(p.updatedAt))) + '</span></div>';
+    const foot = card.querySelector('.m-foot');
+    const sw = salesShareSwitch(p); sw.classList.add('m-share');
+    sw.onclick = ev => ev.stopPropagation();
+    foot.appendChild(sw);
+    card.onclick = ()=> showDetail(p.id);
+    card.onkeydown = ev => { if(ev.key === 'Enter') showDetail(p.id); };
+    box.appendChild(card);
+  });
+}
+
+function initMobileMode(){
+  tagMobileSections();
+  if(mTab === 'mine'){ const me = myOwnerName(); if(me) activeOwner = me; }
+  applyMobileTab();
+}
+document.addEventListener('DOMContentLoaded', initMobileMode);
+M_QUERY.addEventListener && M_QUERY.addEventListener('change', ()=>{ applyMobileTab(); render(); });
+
 function renderGantt(proj){
   const ganttBox = document.getElementById('d-gantt');
   const emptyMsg = document.getElementById('d-gantt-empty');
@@ -4981,6 +5230,7 @@ function render(){
     rowsBox.appendChild(miscWrap);
   }
 
+  if(typeof renderMobileCards === 'function') renderMobileCards(activeProjects);
   renderStageGroupSummary(filtered);
   renderPriorityList(filtered);
   renderPortfolioSummary();
