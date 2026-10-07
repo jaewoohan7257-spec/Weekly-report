@@ -1669,6 +1669,12 @@ tr.row-share-pending > td:first-child{box-shadow:inset 4px 0 0 #9db4fa}
 .ptype-sel.empty{color:#B42318;border-color:#F4C7C3;background:#FFF7F6}
 
 /* ===== 로그인 · 권한 ===== */
+.inapp-desc{font-size:13.5px;line-height:1.7;color:#5b6576;margin:0 0 16px}
+.inapp-btn{display:block;width:100%;padding:12px 16px;font:inherit;font-size:14px;font-weight:700;border-radius:12px;margin-top:8px;cursor:pointer}
+.inapp-btn.primary{background:#315EF6;color:#fff;border:none}
+.inapp-btn.ghost{background:#fff;color:#172033;border:1px solid #e3e8f0}
+.inapp-hint{font-size:12.5px;line-height:1.6;color:#9a650b;background:#fff8e6;border-radius:8px;padding:8px 10px;margin:12px 0 0}
+
 .auth-card h2{text-align:center!important;justify-content:center!important;padding-left:0!important;border-left:none!important;margin-left:0!important}
 .auth-card h2::before,.auth-card h2::after{display:none!important;content:none!important}
 .mp-who{display:inline-flex;align-items:center;gap:10px;min-width:0;flex:1}
@@ -2443,6 +2449,43 @@ if(FIREBASE_OK && !AUTH_CONFIGURED){
 }
 
 // ===== 로그인 화면 =====
+// ===== 앱 안 브라우저(카카오톡·네이버·인스타 등) 감지 =====
+// 이런 브라우저에서는 구글이 로그인을 막거나, 로그인 정보가 저장되지 않아 오류가 나요 → 사파리·크롬으로 열도록 안내
+const IN_APP = (()=>{
+  const ua = navigator.userAgent || '';
+  if(/KAKAOTALK/i.test(ua)) return 'kakao';
+  if(/NAVER\(inapp|; NAVER\b/i.test(ua)) return 'naver';
+  if(/\bLine\//i.test(ua)) return 'line';
+  if(/Instagram/i.test(ua)) return 'instagram';
+  if(/FBAN|FBAV|FB_IAB/i.test(ua)) return 'facebook';
+  if(/Slack/i.test(ua)) return 'slack';
+  if(/DaumApps|everytimeApp|BAND\//i.test(ua)) return 'app';
+  if(/Android/i.test(ua) && /; wv\)/.test(ua)) return 'webview';
+  return '';
+})();
+const IS_IOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const IS_ANDROID = /Android/i.test(navigator.userAgent);
+function openInExternalBrowser(){
+  const url = location.href;
+  if(IN_APP === 'kakao'){ location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(url); return; }
+  if(IS_ANDROID){ location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end'; return; }
+}
+function copyPageUrl(btn){
+  const url = location.href.split('#')[0];
+  const done = ()=>{ if(btn){ btn.textContent = '✓ 주소를 복사했어요'; } };
+  try{ navigator.clipboard.writeText(url).then(done, ()=>{ prompt('아래 주소를 복사해서 사파리·크롬에 붙여넣어 주세요', url); }); }
+  catch(e){ prompt('아래 주소를 복사해서 사파리·크롬에 붙여넣어 주세요', url); }
+}
+function inAppGuideHTML(){
+  const canOpen = IN_APP === 'kakao' || IS_ANDROID;
+  return '<p class="inapp-desc">지금은 <b>' + ({kakao:'카카오톡', naver:'네이버 앱', line:'라인', instagram:'인스타그램', facebook:'페이스북', slack:'슬랙'}[IN_APP] || '앱') +
+    ' 안의 브라우저</b>로 열려 있어요.<br>이 화면에서는 구글 로그인이 막혀서, <b>' + (IS_IOS ? '사파리' : '크롬') + '</b>로 열어야 해요.</p>' +
+    (canOpen ? '<button class="primary inapp-btn" onclick="openInExternalBrowser()">' + (IS_IOS ? '사파리로' : '크롬으로') + ' 열기</button>' : '') +
+    '<button class="inapp-btn ghost" onclick="copyPageUrl(this)">주소 복사하기</button>' +
+    (IS_IOS && IN_APP !== 'kakao' ? '<p class="inapp-hint">오른쪽 아래(또는 위) <b>⋯ / 나침반</b> 버튼 → <b>Safari로 열기</b>를 눌러도 돼요.</p>' : '') +
+    (IN_APP === 'kakao' ? '<p class="inapp-hint">버튼이 안 되면 오른쪽 아래 <b>⋯</b> → <b>다른 브라우저로 열기</b>를 눌러주세요.</p>' : '');
+}
+
 let _authStateShown = false;
 function authOverlay(state, detail){
   if(!document.body){ window.addEventListener('DOMContentLoaded', ()=>authOverlay(state, detail)); return; }
@@ -2463,6 +2506,7 @@ function authOverlay(state, detail){
     viewer:  '<p class="auth-desc"><b>' + esc(detail) + '</b> 계정은 <b>영업 공유 페이지</b> 열람용이에요.</p>' +
              '<a class="primary auth-btn" style="display:block;text-decoration:none;box-sizing:border-box" href="sales.html">영업 공유 페이지로 이동</a>' +
              '<button class="auth-btn" style="margin-top:8px" onclick="authSignOut()">다른 계정으로 로그인</button>',
+    inapp:   inAppGuideHTML(),
     denied:  '<p class="auth-desc"><b>' + esc(detail) + '</b> 계정은 아직 등록되지 않았어요.<br>관리자에게 이 이메일을 팀원으로 등록해 달라고 요청해주세요.</p>' +
              '<button class="auth-btn" onclick="authSignOut()">다른 계정으로 로그인</button>'
   }[state] || '';
@@ -2471,13 +2515,15 @@ function authOverlay(state, detail){
 async function authSignIn(){
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.setCustomParameters({prompt: 'select_account'});
+  // 리다이렉트 방식은 사파리·앱 안 브라우저에서 'missing initial state' 오류가 나서 쓰지 않는다 (팝업만 사용)
   try{ await firebase.auth().signInWithPopup(provider); }
   catch(e){
-    if(e && (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment')){
-      return firebase.auth().signInWithRedirect(provider);
-    }
-    if(e && e.code === 'auth/popup-closed-by-user') return;
-    authOverlay('signin', '로그인에 실패했어요: ' + (e && (e.code || e.message)));
+    const c = e && e.code;
+    if(c === 'auth/popup-closed-by-user' || c === 'auth/cancelled-popup-request') return;
+    if(c === 'auth/operation-not-supported-in-this-environment' || c === 'auth/web-storage-unsupported') return authOverlay('inapp');
+    if(c === 'auth/popup-blocked') return authOverlay('signin', '로그인 창(팝업)이 차단됐어요. 주소창 옆의 팝업 차단 표시를 눌러 허용한 뒤 다시 눌러주세요.');
+    if(c === 'auth/network-request-failed') return authOverlay('signin', '인터넷 연결을 확인하고 다시 눌러주세요.');
+    authOverlay('signin', '로그인에 실패했어요: ' + (c || (e && e.message)));
   }
 }
 async function authSignOut(reason){
@@ -2524,10 +2570,11 @@ function startOwnerIdleWatch(){
 }
 
 if(AUTH_CONFIGURED){
-  window.addEventListener('DOMContentLoaded', ()=>{ if(!_authStateShown) authOverlay('loading'); });
+  window.addEventListener('DOMContentLoaded', ()=>{ if(!_authStateShown) authOverlay(IN_APP ? 'inapp' : 'loading'); });
   // 브라우저를 닫으면 로그아웃되도록 (탭·새로고침 사이에는 유지)
   try{ firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(()=>{}); }catch(e){}
   firebase.auth().onAuthStateChanged(async user=>{
+    if(!user && IN_APP){ authOverlay('inapp'); if(IN_APP === 'kakao') setTimeout(openInExternalBrowser, 300); return; }
     if(!user){
       let reason = ''; try{ reason = sessionStorage.getItem('auth_logout_reason') || ''; sessionStorage.removeItem('auth_logout_reason'); }catch(e){}
       authOverlay('signin', reason === 'idle' ? '관리자 계정은 ' + OWNER_IDLE_MIN + '분 동안 사용하지 않으면 보안을 위해 자동으로 로그아웃돼요. 다시 로그인해주세요.' : '');
@@ -4656,7 +4703,7 @@ function render(){
   const sc = document.getElementById('share-count');
   if(sc){
     const n = activeProjects.filter(p => p.salesShare).length;
-    sc.innerHTML = n ? '📤 영업 공유 중 <b>' + n + '건</b> <a href="sales.html" target="_blank" rel="noopener">영업 페이지 보기</a>' : '<span class="sc-none">영업 공유 중인 프로젝트 없음</span>';
+    sc.innerHTML = n ? '📤 영업 공유 중 <b>' + n + '건</b> <a href="sales.html" title="같은 창에서 열려요 (새 창은 다시 로그인해야 해요)">영업 페이지 보기</a>' : '<span class="sc-none">영업 공유 중인 프로젝트 없음</span>';
     sc.title = '체크 후 화면 아래 [영업 페이지에 반영]을 눌러야 영업 페이지에 올라가요';
   }
 
