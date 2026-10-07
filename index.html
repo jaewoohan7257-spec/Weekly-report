@@ -1608,6 +1608,9 @@ table{border:1px solid var(--line)!important;border-radius:14px!important;overfl
 }
 </style>
 <style id="app-feature-styles">
+/* 제품 유형 선택 */
+.ptype-sel{font-size:12.5px;padding:4px 6px;min-width:0;width:100%;border-radius:8px}
+.ptype-sel.empty{color:#B42318;border-color:#F4C7C3;background:#FFF7F6}
 
 /* ===== 로그인 · 권한 ===== */
 body.not-owner .owner-only{display:none !important}
@@ -1843,9 +1846,10 @@ body.not-owner .owner-only{display:none !important}
 
   <div class="panel" id="add-panel">
     <h2 id="sec-add">프로젝트 추가</h2>
-    <div class="add-row" style="grid-template-columns:110px 1fr 130px 160px 90px">
+    <div class="add-row" style="grid-template-columns:110px 1fr 140px 130px 160px 90px">
       <input id="in-owner" placeholder="담당자">
       <input id="in-name" placeholder="프로젝트명 / 업무명">
+      <select id="in-ptype" title="제품 유형"></select>
       <select id="in-type" onchange="toggleAddType()">
         <option value="pipeline">파이프라인 프로젝트</option>
         <option value="misc">기타업무</option>
@@ -1862,11 +1866,13 @@ body.not-owner .owner-only{display:none !important}
       <h2 id="sec-list" style="margin:0">프로젝트 목록</h2>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <span class="status-msg" id="review-progress" style="margin:0"></span>
+        <button id="ptype-autofill" onclick="autoFillProductTypes(this)" title="유형이 비어 있는 프로젝트를 프로젝트명([꼬치], 선물세트 등)으로 채워요">유형 자동 채우기</button>
         <button onclick="resetWeeklyReview(this)">이번 주 확인 초기화</button>
       </div>
     </div>
-    <div class="add-row" style="grid-template-columns:1fr 200px;margin-bottom:12px">
+    <div class="add-row" style="grid-template-columns:1fr 170px 200px;margin-bottom:12px">
       <input id="proj-search" placeholder="🔍 프로젝트명·담당자·내용·코멘트 검색" oninput="render()">
+      <select id="proj-ptype-filter" onchange="render()" title="유형으로 보기"></select>
       <select id="proj-sort" onchange="render()">
         <option value="default">기본 순서</option>
         <option value="deadline">마감임박순</option>
@@ -1876,7 +1882,7 @@ body.not-owner .owner-only{display:none !important}
       </select>
     </div>
     <table>
-      <thead><tr><th>담당자</th><th>프로젝트명</th><th>요약</th><th style="width:64px">상태</th><th style="width:170px">현재 단계</th><th style="width:56px;white-space:nowrap" title="이번 주 확인 완료">확인</th><th style="width:60px"></th></tr></thead>
+      <thead><tr><th>담당자</th><th style="width:118px">유형</th><th>프로젝트명</th><th>요약</th><th style="width:64px">상태</th><th style="width:170px">현재 단계</th><th style="width:56px;white-space:nowrap" title="이번 주 확인 완료">확인</th><th style="width:60px"></th></tr></thead>
       <tbody id="proj-body"></tbody>
     </table>
     <div class="footer-actions">
@@ -1982,6 +1988,7 @@ body.not-owner .owner-only{display:none !important}
   <h1 id="d-name" contenteditable="true" spellcheck="false" title="클릭해서 프로젝트명 수정" style="outline:none;border-bottom:1px dashed transparent;cursor:text" onblur="onDNameBlur()" onkeydown="onDNameKeydown(event)">-</h1>
   <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px">
     <p class="sub" id="d-owner" style="margin:0">-</p>
+    <span id="d-ptype-wrap"></span>
     <select id="d-tier" onchange="updateTier()" style="width:auto" title="핵심으로 지정하면 주간보고 요약과 PPT에서 우선 노출돼요">
       <option value="normal">중요도: 일반</option>
       <option value="key">⭐ 중요도: 핵심 안건</option>
@@ -3006,12 +3013,63 @@ async function saveDetailNow(btn){
   }
 }
 
+function initAddProductType(){
+  const el = document.getElementById('in-ptype');
+  if(!el || el.options.length) return;
+  el.innerHTML = '<option value="">유형 선택</option>' + PRODUCT_TYPES.map(t => '<option value="' + t + '">' + t + '</option>').join('');
+}
+window.addEventListener('DOMContentLoaded', initAddProductType);
 function toggleAddType(){
+  initAddProductType();
   const typeEl = document.getElementById('in-type');
   const stageEl = document.getElementById('in-stage');
   if(!typeEl || !stageEl) return;
   const isMisc = typeEl.value === 'misc';
   stageEl.style.display = isMisc ? 'none' : '';
+}
+
+// ===== 제품 유형(카테고리) =====
+const PRODUCT_TYPES = ['기타','간식용일반','반찬용일반','사각','꼬치','핫바','핫델리','모듬','선물세트','레토르트/밀키트'];
+// 프로젝트명으로 유형 추천: 말머리 [꼬치] 등이 유형과 같으면 우선, 아니면 이름 속 키워드
+function guessProductType(p){
+  if(p.misc) return '기타';
+  const name = String(p.name || '');
+  const head = (name.match(/^\s*\[([^\]]+)\]/) || [])[1] || '';
+  if(PRODUCT_TYPES.includes(head)) return head;
+  const rules = [['선물세트', /선물세트|세트/], ['레토르트/밀키트', /레토르트|밀키트/], ['핫델리', /핫델리/], ['핫바', /핫바/],
+                 ['꼬치', /꼬치/], ['모듬', /모듬/], ['사각', /사각/], ['반찬용일반', /반찬/], ['간식용일반', /간식/]];
+  for(const [t, re] of rules) if(re.test(name)) return t;
+  return '';
+}
+function productTypeSelect(value, onChange, opts){
+  opts = opts || {};
+  const sel = document.createElement('select');
+  sel.className = 'ptype-sel' + (value ? '' : ' empty');
+  sel.title = '제품 유형';
+  const o0 = document.createElement('option'); o0.value = ''; o0.textContent = opts.placeholder || '미지정';
+  sel.appendChild(o0);
+  PRODUCT_TYPES.forEach(t=>{ const o = document.createElement('option'); o.value = t; o.textContent = t; sel.appendChild(o); });
+  sel.value = value || '';
+  sel.onclick = ev => ev.stopPropagation();
+  sel.onchange = ()=> onChange(sel.value);
+  return sel;
+}
+function setProductType(p, value, statusId){
+  if(!p) return;
+  p.productType = value || '';
+  markDirty(p.id);       // 유형 지정은 진행 업데이트가 아니므로 '○일 전 업데이트'는 바꾸지 않는다
+  saveData(statusId || 'save-status');
+  render();
+}
+// 유형이 비어 있는 프로젝트를 이름으로 한 번에 채운다 (지금 보고 있는 팀만, 추천이 없는 항목은 그대로)
+async function autoFillProductTypes(btn){
+  const targets = projects.filter(inTeam).filter(p => !p.productType);
+  let n = 0;
+  targets.forEach(p=>{ const g = guessProductType(p); if(g){ p.productType = g; markDirty(p.id); n++; } });
+  const st = document.getElementById('save-status');
+  if(n){ await saveData('save-status'); render(); }
+  const left = projects.filter(inTeam).filter(p => !p.productType).length;
+  if(st) st.textContent = n ? ('유형 ' + n + '건을 프로젝트명으로 채웠어요.' + (left ? ' 나머지 ' + left + '건은 목록에서 직접 골라주세요.' : '')) : '이름으로 추천할 수 있는 항목이 없어요. 목록에서 직접 골라주세요.';
 }
 
 function addProject(){
@@ -3026,6 +3084,14 @@ function addProject(){
     errEl.textContent = '담당자와 프로젝트명(업무명)을 입력해주세요.';
     return;
   }
+  const ptEl = document.getElementById('in-ptype');
+  let ptype = ptEl ? ptEl.value : '';
+  if(!ptype && typeEl && typeEl.value === 'misc') ptype = '기타';
+  if(!ptype){
+    errEl.textContent = '유형을 선택해주세요.';
+    if(ptEl) ptEl.focus();
+    return;
+  }
   errEl.textContent = '';
   const isMisc = typeEl && typeEl.value === 'misc';
   let steps;
@@ -3038,8 +3104,8 @@ function addProject(){
   }
   const _newId = Date.now()+Math.random();
   markDirty(_newId);
-  projects.push({id: _newId, owner, name, steps, misc: isMisc, status: 'active', reviewedWeek: null, tier: 'normal', team: (activeTeam === 'all' ? 'team2' : activeTeam), updatedAt: new Date().toISOString()});
-  ownerEl.value = ''; nameEl.value = '';
+  projects.push({id: _newId, owner, name, steps, misc: isMisc, productType: ptype, status: 'active', reviewedWeek: null, tier: 'normal', team: (activeTeam === 'all' ? 'team2' : activeTeam), updatedAt: new Date().toISOString()});
+  ownerEl.value = ''; nameEl.value = ''; if(ptEl) ptEl.value = '';
   saveData('save-status');
   render();
 }
@@ -3361,6 +3427,8 @@ function deleteWeeklyEntry(entryId, btn){
     const p = projects.find(x=>x.id===currentDetailId);
     if(!p) return;
     p.weeklyLog = (p.weeklyLog||[]).filter(x=>x.id!==entryId);
+    p.updatedAt = new Date().toISOString();
+    markDirty(p.id);
     saveData('d-weekly-status');
     renderWeeklyLog(p);
     render();
@@ -3876,6 +3944,8 @@ function renderDetail(){
   if(storageSel) storageSel.value = proj.storageType || '';
   const tierSel = document.getElementById('d-tier');
   if(tierSel) tierSel.value = proj.tier || 'normal';
+  const ptw = document.getElementById('d-ptype-wrap');
+  if(ptw){ ptw.innerHTML = ''; const sel = productTypeSelect(proj.productType, v => setProductType(proj, v, 'd-save-status'), {placeholder:'유형: 미지정'}); sel.style.width = 'auto'; ptw.appendChild(sel); }
   renderWeeklyLog(proj);
   updateSaveIndicator();
 
@@ -4299,6 +4369,21 @@ function render(){
     activeProjects = activeProjects.filter(p=>p.owner === activeOwner);
   }
 
+  // 유형 필터
+  const ptf = document.getElementById('proj-ptype-filter');
+  if(ptf){
+    const cur = ptf.value || '';
+    const counts = {};
+    activeProjects.forEach(p => { const k = p.productType || ''; counts[k] = (counts[k] || 0) + 1; });
+    ptf.innerHTML = '<option value="">전체 유형</option>' + PRODUCT_TYPES.map(t => '<option value="' + t + '">' + t + ' (' + (counts[t] || 0) + ')</option>').join('') +
+                    '<option value="__none">유형 미지정 (' + (counts[''] || 0) + ')</option>';
+    ptf.value = cur;
+    if(cur === '__none') activeProjects = activeProjects.filter(p => !p.productType);
+    else if(cur) activeProjects = activeProjects.filter(p => p.productType === cur);
+    const af = document.getElementById('ptype-autofill');
+    if(af) af.style.display = projects.filter(inTeam).some(p => isActive(p) && !p.productType) ? '' : 'none';
+  }
+
   // 검색
   const searchEl = document.getElementById('proj-search');
   const searchTerm = searchEl ? searchEl.value.trim().toLowerCase() : '';
@@ -4306,6 +4391,7 @@ function render(){
     activeProjects = activeProjects.filter(p=>{
       if(p.name.toLowerCase().includes(searchTerm)) return true;
       if(p.owner.toLowerCase().includes(searchTerm)) return true;
+      if((p.productType || '').toLowerCase().includes(searchTerm)) return true;
       if(p.steps.some(s => (s.content||'').toLowerCase().includes(searchTerm))) return true;
       return false;
     });
@@ -4386,6 +4472,7 @@ function render(){
       ev.stopPropagation();
       p.tier = (p.tier === 'key') ? 'normal' : 'key';
       p.updatedAt = new Date().toISOString();
+      markDirty(p.id);
       saveData('save-status');
       render();
     };
@@ -4446,7 +4533,9 @@ function render(){
     delBtn.className = 'del-btn owner-only'; delBtn.textContent = '삭제';
     delBtn.onclick = ()=>requestDeleteProject(p.id, tdDel, render);
     tdDel.appendChild(delBtn);
-    tr.append(tdOwner, tdName, tdSummary, tdStatusLight, tdStage, tdReview, tdDel);
+    const tdType = document.createElement('td');
+    tdType.appendChild(productTypeSelect(p.productType, v => setProductType(p, v)));
+    tr.append(tdOwner, tdType, tdName, tdSummary, tdStatusLight, tdStage, tdReview, tdDel);
     body.appendChild(tr);
   });
 
