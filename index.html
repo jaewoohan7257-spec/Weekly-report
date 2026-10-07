@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SAMJIN 상품마케팅팀 Weekly Report</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
@@ -1608,6 +1609,28 @@ table{border:1px solid var(--line)!important;border-radius:14px!important;overfl
 }
 </style>
 <style id="app-feature-styles">
+/* ===== 휴대폰·태블릿 ===== */
+.tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+@media (max-width:1100px){
+  .tbl-scroll.w-list > table{min-width:1040px}
+  .tbl-scroll.w-list .ptype-sel{min-width:96px}
+}
+@media (max-width:760px){
+  .tbl-scroll.w-list > table{min-width:1000px}
+  .tbl-scroll.w-steps > table{min-width:760px}
+  .tbl-scroll.w-mid > table{min-width:640px}
+  .tbl-scroll.w-sm > table{min-width:520px}
+  .tbl-scroll{margin:0 -4px;padding-bottom:4px}
+  .tbl-scroll::after{content:'← 표를 좌우로 밀어서 볼 수 있어요 →';display:block;text-align:center;font-size:11px;color:#98a2b3;padding-top:6px}
+  .ptype-sel{min-width:96px}
+  input,select,textarea{font-size:16px}       /* iPhone에서 입력 시 화면이 확대되지 않도록 */
+  #auth-bar{justify-content:space-between}
+  #share-bar{width:calc(100% - 24px);bottom:12px}
+  .mp-add{flex-wrap:wrap}
+  .mp-add input{flex:1 1 100%}
+  .mp-add select,.mp-add button{flex:1 1 auto}
+  #member-panel{padding:20px 10px}
+}
 /* 영업 공유 상태 표시 (명확하게) */
 .share-chk{flex-direction:column;gap:3px}
 .share-chk .share-chip{font-size:10.5px;font-weight:800;border-radius:5px;padding:1px 7px}
@@ -1915,10 +1938,10 @@ body.not-owner .owner-only{display:none !important}
         <option value="priority">중요도순</option>
       </select>
     </div>
-    <table>
+    <div class="tbl-scroll w-list"><table>
       <thead><tr><th>담당자</th><th style="width:118px">유형</th><th>프로젝트명</th><th>요약</th><th style="width:64px">상태</th><th style="width:170px">현재 단계</th><th style="width:84px;white-space:nowrap" title="공유할 프로젝트만 체크하고 아래 [영업 페이지에 반영]을 눌러주세요">영업 공유</th><th style="width:56px;white-space:nowrap" title="이번 주 확인 완료">확인</th><th style="width:60px"></th></tr></thead>
       <tbody id="proj-body"></tbody>
-    </table>
+    </table></div>
     <div class="footer-actions">
       <span class="status-msg" id="save-status"></span>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -1937,10 +1960,10 @@ body.not-owner .owner-only{display:none !important}
     </div>
     <p class="status-msg" style="margin-bottom:10px">완료·홀딩·드랍으로 이관된 프로젝트는 위 목록·파이프라인·타임라인에서는 빠지고 여기서만 관리돼요. 필요하면 언제든 다시 활성으로 되돌릴 수 있어요.</p>
     <div class="filters" id="archive-filters"></div>
-    <table>
+    <div class="tbl-scroll w-mid"><table>
       <thead><tr><th>담당자</th><th>프로젝트명</th><th style="width:90px">상태</th><th style="width:130px">이관일</th><th style="width:170px"></th></tr></thead>
       <tbody id="archive-body"></tbody>
-    </table>
+    </table></div>
     <p class="status-msg" id="archive-status"></p>
   </div>
 
@@ -1984,10 +2007,10 @@ body.not-owner .owner-only{display:none !important}
       </div>
     </div>
     <p class="status-msg" style="margin-bottom:10px">저장하는 순간의 데이터를 그 시점 이름으로 고정해서 보관해요. 주차 단위는 같은 주에 다시 저장하면 덮어쓰고, 일자 단위는 하루에 여러 번 저장해도 각각 따로 쌓여요. 이후 대시보드가 계속 바뀌어도 저장된 스냅샷 내용은 바뀌지 않습니다.</p>
-    <table>
+    <div class="tbl-scroll w-sm"><table>
       <thead><tr><th>시점</th><th>저장 시각</th><th style="width:230px"></th></tr></thead>
       <tbody id="snapshot-body"></tbody>
-    </table>
+    </table></div>
     <div class="footer-actions">
       <p class="status-msg" id="snapshot-status" style="margin:0"></p>
       <div style="display:flex;gap:8px">
@@ -2076,10 +2099,10 @@ body.not-owner .owner-only{display:none !important}
       <p class="status-msg" style="margin:0;align-self:center">보관 유형에 따라 STEP.6 리드타임과 그 이후 GATE 3 일정이 달라져요.</p>
     </div>
     <p class="status-msg" style="margin-bottom:10px">STEP.2 시작일·마감일을 입력하면 STEP.3 원가/가격 일정에 동일하게 채워지고, STEP.2 마감일을 입력하면 STEP.4 → STEP.4-1 → STEP.5 → STEP.6(보관 유형별 리드타임) → GATE 3(STEP.6 마감일 시작, 6개월 뒤 첫째 주 목요일 마감) 일정이 영업일(주말·공휴일 제외) 기준으로 자동 채워집니다. 이미 값이 있는 단계는 자동으로 덮어쓰지 않아요. 기존 일정을 다시 맞추려면 위에서 <b>기준이 되는 단계</b>를 고르고 '일정 재계산'을 누르세요. <b>기준 단계 자체는 바뀌지 않고, 그 마감일을 바탕으로 화살표 뒤 단계들만 새로 계산해 덮어씁니다.</b> (GATE 1·2와 STEP.1은 자동 계산 대상이 아니에요)<br><b>각 단계마다 🔗 링크 추가 버튼으로 공유 드라이브 자료를 연결할 수 있어요.</b></p>
-    <table>
+    <div class="tbl-scroll w-steps"><table>
       <thead><tr><th style="width:140px">단계</th><th>내용</th><th style="width:90px">상태</th><th style="width:130px">시작일</th><th style="width:130px">마감일</th></tr></thead>
       <tbody id="d-steps-body"></tbody>
-    </table>
+    </table></div>
     <div class="save-bar" id="save-bar">
       <button id="d-save-btn" onclick="saveDetailNow(this)" disabled>✓ 저장됨</button>
       <span class="status-msg" id="d-save-status" style="margin:0"></span>
@@ -4468,6 +4491,15 @@ function fitGanttLabels(wrap){
   });
 }
 window.addEventListener('resize', ()=>{ document.querySelectorAll('.wg-wrap').forEach(fitGanttLabels); });
+// 코드로 만드는 표(팀별 비교·소요기간 등)도 휴대폰에서 좌우 스크롤되도록 감싼다
+new MutationObserver(()=>{
+  document.querySelectorAll('table[data-wrap]').forEach(t=>{
+    if(t.parentElement && !t.parentElement.classList.contains('tbl-scroll')){
+      const w = document.createElement('div'); w.className = 'tbl-scroll ' + t.dataset.wrap;
+      t.parentElement.insertBefore(w, t); w.appendChild(t);
+    }
+  });
+}).observe(document.documentElement, {childList:true, subtree:true});
 
 // 목록 '요약' 칸: 최신 3건 + 태그 + 날짜 칩, 나머지는 접기, 아래에 업데이트 경과
 const memoOpen = new Set();
@@ -4914,6 +4946,7 @@ function renderDurationAnalysis(){
 
   const maxAvg = Math.max(...rows.map(r=>r.avg), 1);
   const table = document.createElement('table');
+  table.dataset.wrap = 'w-mid';
   table.innerHTML = '<thead><tr>' +
     '<th style="width:150px">단계</th>' +
     '<th style="width:56px">건수</th>' +
@@ -5514,6 +5547,7 @@ function renderPortfolioSummary(){
     box.appendChild(h);
 
     const tb = document.createElement('table');
+    tb.dataset.wrap = 'w-mid';
     tb.innerHTML = '<thead><tr><th style="width:180px">팀</th><th style="width:64px">전체</th>' +
       '<th style="width:70px">진행</th><th style="width:70px">완료</th>' +
       '<th style="width:70px">홀딩</th><th style="width:70px">드랍</th>' +
@@ -5568,6 +5602,8 @@ function renderPortfolioSummary(){
       box.appendChild(h);
 
       const tb = document.createElement('table');
+      tb.dataset.wrap = 'w-mid';
+    tb.dataset.wrap = 'w-mid';
       tb.innerHTML = '<thead><tr><th style="width:90px">착수 연도</th><th style="width:70px">착수</th>' +
         '<th style="width:70px">완료</th><th style="width:70px">진행</th>' +
         '<th style="width:70px">홀딩</th><th style="width:70px">드랍</th>' +
