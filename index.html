@@ -1608,6 +1608,15 @@ table{border:1px solid var(--line)!important;border-radius:14px!important;overfl
 }
 </style>
 <style id="app-feature-styles">
+/* 영업 공유 스위치 */
+.share-sw{display:inline-flex;align-items:center;gap:6px;border:1px solid #d6dce6;background:#f2f4f8;border-radius:999px;padding:3px 9px 3px 3px;cursor:pointer;font-size:11.5px;font-weight:700;color:#7d8794;box-shadow:none;white-space:nowrap}
+.share-sw .knob{width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.share-sw.on{background:#E6F6F3;border-color:#9fd9cf;color:#0E8F83;flex-direction:row-reverse;padding:3px 3px 3px 9px}
+.share-sw.on .knob{background:#0E8F83}
+.share-sw:focus-visible{outline:2px solid #315EF6;outline-offset:2px}
+.share-detail{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:#5b6576}
+.share-count{font-size:12.5px;font-weight:700;color:#0E8F83}
+.share-memo-panel textarea{width:100%;font-size:14px;line-height:1.6}
 /* 제품 유형 선택 */
 .ptype-sel{font-size:12.5px;padding:4px 6px;min-width:0;width:100%;border-radius:8px}
 .ptype-sel.empty{color:#B42318;border-color:#F4C7C3;background:#FFF7F6}
@@ -1866,6 +1875,7 @@ body.not-owner .owner-only{display:none !important}
       <h2 id="sec-list" style="margin:0">프로젝트 목록</h2>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <span class="status-msg" id="review-progress" style="margin:0"></span>
+        <span class="share-count" id="share-count"></span>
         <button id="ptype-autofill" onclick="autoFillProductTypes(this)" title="유형이 비어 있는 프로젝트를 프로젝트명([꼬치], 선물세트 등)으로 채워요">유형 자동 채우기</button>
         <button onclick="resetWeeklyReview(this)">이번 주 확인 초기화</button>
       </div>
@@ -1882,7 +1892,7 @@ body.not-owner .owner-only{display:none !important}
       </select>
     </div>
     <table>
-      <thead><tr><th>담당자</th><th style="width:118px">유형</th><th>프로젝트명</th><th>요약</th><th style="width:64px">상태</th><th style="width:170px">현재 단계</th><th style="width:56px;white-space:nowrap" title="이번 주 확인 완료">확인</th><th style="width:60px"></th></tr></thead>
+      <thead><tr><th>담당자</th><th style="width:118px">유형</th><th>프로젝트명</th><th>요약</th><th style="width:64px">상태</th><th style="width:170px">현재 단계</th><th style="width:74px;white-space:nowrap" title="켜면 영업 공유 페이지에 이 프로젝트가 보여요">영업 공유</th><th style="width:56px;white-space:nowrap" title="이번 주 확인 완료">확인</th><th style="width:60px"></th></tr></thead>
       <tbody id="proj-body"></tbody>
     </table>
     <div class="footer-actions">
@@ -1989,10 +1999,17 @@ body.not-owner .owner-only{display:none !important}
   <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px">
     <p class="sub" id="d-owner" style="margin:0">-</p>
     <span id="d-ptype-wrap"></span>
+    <span class="share-detail" title="켜면 영업 공유 페이지에 이 프로젝트가 보여요">영업 공유 <span id="d-share-wrap"></span></span>
     <select id="d-tier" onchange="updateTier()" style="width:auto" title="핵심으로 지정하면 주간보고 요약과 PPT에서 우선 노출돼요">
       <option value="normal">중요도: 일반</option>
       <option value="key">⭐ 중요도: 핵심 안건</option>
     </select>
+  </div>
+
+  <div class="panel share-memo-panel" id="d-share-memo-box" style="display:none">
+    <h2>영업 전달 메모</h2>
+    <p class="status-msg" style="margin:0 0 8px">영업 공유 페이지 맨 위에 강조해서 보여줄 내용이에요. 비워두면 표시되지 않아요. (내부 메모·애로사항은 따로 입력하지 않아도 공유 페이지에 함께 보여요)</p>
+    <textarea id="d-share-memo" rows="3" placeholder="예: B2B 전용 4입 규격. 급식·외식 거래처 제안용이며 단가표는 담당자에게 요청해주세요." onblur="saveSalesMemo()"></textarea>
   </div>
 
   <div class="panel">
@@ -2974,8 +2991,16 @@ async function saveData(statusElId, opts){
       remote.forEach(rp=>{
         if(deletedIds.has(rp.id)) return;                 // 내가 지운 건 제외
         seen.add(rp.id);
-        if(dirtyIds.has(rp.id) && localMap.has(rp.id)) merged.push(localMap.get(rp.id));
-        else merged.push(rp);                             // 남의 변경은 그대로 보존
+        const lp = localMap.get(rp.id);
+        if(dirtyIds.has(rp.id) && lp) merged.push(lp);
+        else if(lp){
+          // 남의 변경은 보존하되, 화면 버튼들이 들고 있는 객체를 그대로 유지한다.
+          // (객체를 새로 바꿔치기하면, 다시 그리기 전 화면에서 고친 내용이 옛 객체에 들어가 저장되지 않는 문제가 생김)
+          Object.keys(lp).forEach(k => { if(!(k in rp)) delete lp[k]; });
+          Object.assign(lp, rp);
+          merged.push(lp);
+        }
+        else merged.push(rp);
       });
       // 내 화면에만 있는 신규 프로젝트 추가
       projects.forEach(lp=>{ if(!seen.has(lp.id) && !deletedIds.has(lp.id)) merged.push(lp); });
@@ -3026,6 +3051,51 @@ function toggleAddType(){
   if(!typeEl || !stageEl) return;
   const isMisc = typeEl.value === 'misc';
   stageEl.style.display = isMisc ? 'none' : '';
+}
+
+// ===== 영업 공유 =====
+// salesShare: 켜면 영업 공유 페이지에 노출 / salesMemo: 영업에 전달할 메모 (선택)
+function salesShareSwitch(p, statusId){
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'share-sw' + (p.salesShare ? ' on' : '');
+  b.setAttribute('role', 'switch');
+  b.setAttribute('aria-checked', p.salesShare ? 'true' : 'false');
+  b.title = p.salesShare ? '영업 공유 중 — 누르면 공유 해제' : '누르면 영업 공유 페이지에 보여요';
+  b.innerHTML = '<span class="knob"></span><span class="lbl">' + (p.salesShare ? '공유' : '안 함') + '</span>';
+  b.onclick = ev => { ev.stopPropagation(); setSalesShare(p.id, !p.salesShare, statusId); };
+  return b;
+}
+function setSalesShare(id, on, statusId){
+  const p = projects.find(x => x.id === id);
+  if(!p) return;
+  p.salesShare = !!on;
+  markDirty(p.id);                 // 공유 여부는 진행 업데이트가 아니므로 업데이트 날짜는 그대로
+  saveData(statusId || 'save-status');
+  render();
+  if(currentDetailId === id) renderSalesShareDetail(p);
+}
+function renderSalesShareDetail(p){
+  const box = document.getElementById('d-share-wrap');
+  if(!box || !p) return;
+  box.innerHTML = '';
+  box.appendChild(salesShareSwitch(p, 'd-save-status'));
+  const memoBox = document.getElementById('d-share-memo-box');
+  if(memoBox){
+    memoBox.style.display = p.salesShare ? '' : 'none';
+    const ta = document.getElementById('d-share-memo');
+    if(ta && document.activeElement !== ta) ta.value = p.salesMemo || '';
+  }
+}
+function saveSalesMemo(){
+  const p = projects.find(x => x.id === currentDetailId);
+  const ta = document.getElementById('d-share-memo');
+  if(!p || !ta) return;
+  const v = ta.value.trim();
+  if(v === (p.salesMemo || '')) return;
+  p.salesMemo = v;
+  markDirty(p.id);
+  saveData('d-save-status');
 }
 
 // ===== 제품 유형(카테고리) =====
@@ -3944,6 +4014,7 @@ function renderDetail(){
   if(storageSel) storageSel.value = proj.storageType || '';
   const tierSel = document.getElementById('d-tier');
   if(tierSel) tierSel.value = proj.tier || 'normal';
+  renderSalesShareDetail(proj);
   const ptw = document.getElementById('d-ptype-wrap');
   if(ptw){ ptw.innerHTML = ''; const sel = productTypeSelect(proj.productType, v => setProductType(proj, v, 'd-save-status'), {placeholder:'유형: 미지정'}); sel.style.width = 'auto'; ptw.appendChild(sel); }
   renderWeeklyLog(proj);
@@ -4369,6 +4440,9 @@ function render(){
     activeProjects = activeProjects.filter(p=>p.owner === activeOwner);
   }
 
+  const sc = document.getElementById('share-count');
+  if(sc){ const n = activeProjects.filter(p => p.salesShare).length; sc.textContent = n ? '영업 공유 ' + n + '건' : ''; }
+
   // 유형 필터
   const ptf = document.getElementById('proj-ptype-filter');
   if(ptf){
@@ -4376,9 +4450,11 @@ function render(){
     const counts = {};
     activeProjects.forEach(p => { const k = p.productType || ''; counts[k] = (counts[k] || 0) + 1; });
     ptf.innerHTML = '<option value="">전체 유형</option>' + PRODUCT_TYPES.map(t => '<option value="' + t + '">' + t + ' (' + (counts[t] || 0) + ')</option>').join('') +
-                    '<option value="__none">유형 미지정 (' + (counts[''] || 0) + ')</option>';
+                    '<option value="__none">유형 미지정 (' + (counts[''] || 0) + ')</option>' +
+                    '<option value="__share">영업 공유 중 (' + activeProjects.filter(p => p.salesShare).length + ')</option>';
     ptf.value = cur;
     if(cur === '__none') activeProjects = activeProjects.filter(p => !p.productType);
+    else if(cur === '__share') activeProjects = activeProjects.filter(p => p.salesShare);
     else if(cur) activeProjects = activeProjects.filter(p => p.productType === cur);
     const af = document.getElementById('ptype-autofill');
     if(af) af.style.display = projects.filter(inTeam).some(p => isActive(p) && !p.productType) ? '' : 'none';
@@ -4535,7 +4611,10 @@ function render(){
     tdDel.appendChild(delBtn);
     const tdType = document.createElement('td');
     tdType.appendChild(productTypeSelect(p.productType, v => setProductType(p, v)));
-    tr.append(tdOwner, tdType, tdName, tdSummary, tdStatusLight, tdStage, tdReview, tdDel);
+    const tdShare = document.createElement('td');
+    tdShare.style.textAlign = 'center';
+    tdShare.appendChild(salesShareSwitch(p));
+    tr.append(tdOwner, tdType, tdName, tdSummary, tdStatusLight, tdStage, tdShare, tdReview, tdDel);
     body.appendChild(tr);
   });
 
