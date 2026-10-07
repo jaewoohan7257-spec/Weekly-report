@@ -1669,6 +1669,17 @@ tr.row-share-pending > td:first-child{box-shadow:inset 4px 0 0 #9db4fa}
 .ptype-sel.empty{color:#B42318;border-color:#F4C7C3;background:#FFF7F6}
 
 /* ===== 로그인 · 권한 ===== */
+.auth-card h2{text-align:center!important;justify-content:center!important;padding-left:0!important;border-left:none!important;margin-left:0!important}
+.auth-card h2::before,.auth-card h2::after{display:none!important;content:none!important}
+.mp-who{display:inline-flex;align-items:center;gap:10px;min-width:0;flex:1}
+.mp-name{width:96px;flex:0 0 96px;font-size:13px;font-weight:700;padding:5px 8px;border:1px solid transparent;border-radius:8px;background:#f6f8fb}
+.mp-name:hover{border-color:#d6dce6}
+.mp-name:focus{border-color:#315EF6;background:#fff;outline:none}
+.mp-name:placeholder-shown{font-weight:500}
+.mp-email{color:#5b6576;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mp-add .mp-newname{flex:0 0 96px!important;width:96px!important;min-width:0}
+.mp-add button{white-space:nowrap;flex:0 0 auto}
+.mp-add #mp-email{flex:1 1 auto;min-width:0}
 body.not-owner .owner-only{display:none !important}
 #auth-overlay{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;
   background:linear-gradient(160deg,#eef3ff,#f7f9fc 60%);padding:20px}
@@ -2601,6 +2612,7 @@ function buildSecurityRules(){
                 "$ek": {".read": "auth != null && " + K + " === $ek"}},
     "admins":  {".read": isOwner, ".write": isOwner,
                 "$ek": {".read": "auth != null && " + K + " === $ek"}},
+    "names":   {".read": isOwner, ".write": isOwner},
     "viewers": {".read": isOwner, ".write": isOwner,
                 "$ek": {".read": "auth != null && " + K + " === $ek"}},
     "share":   {".read": isMember + " || " + isViewer, "$sid": {".write": isMember}},
@@ -2618,7 +2630,7 @@ async function toggleMemberPanel(){
   p.innerHTML =
     '<div class="mp-card"><div class="mp-head"><b>👥 팀원·권한 관리</b><button onclick="toggleMemberPanel()">닫기</button></div>' +
     '<p class="mp-desc">등록된 팀원은 조회·추가·수정(프로젝트명 포함)·보관함 이관을 할 수 있어요. <b>프로젝트 삭제 · 초기화 · 백업 불러오기 · 스냅샷 삭제</b>는 <b>삭제 권한</b>이 있는 관리자만 할 수 있어요. 팀원·권한 관리는 총괄 관리자(' + OWNER + ')만 할 수 있어요.</p>' +
-    '<div class="mp-add"><input id="mp-email" type="email" placeholder="구글 이메일 (예: name@gmail.com)"><select id="mp-role" style="width:auto"><option value="member">팀원</option><option value="viewer">영업 열람</option></select><button class="primary" onclick="addMember()">등록</button></div>' +
+    '<div class="mp-add"><input id="mp-newname" class="mp-newname" placeholder="이름" maxlength="20"><input id="mp-email" type="email" placeholder="구글 이메일 (예: name@gmail.com)"><select id="mp-role" style="width:auto"><option value="member">팀원</option><option value="viewer">영업 열람</option></select><button class="primary" onclick="addMember()">등록</button></div>' +
     '<p class="mp-desc" style="margin-top:-4px">영업 열람 계정은 <b>영업 공유 페이지(sales.html)</b>에서 공유 켠 프로젝트만 볼 수 있고, 현황판에는 들어올 수 없어요.</p>' +
     '<div id="mp-list" class="mp-list">불러오는 중...</div><p id="mp-msg" class="mp-msg"></p>' +
     '<details class="mp-rules"><summary>🛡️ Firebase 보안 규칙 (규칙이 바뀐 버전을 받았을 때만 다시 붙여넣기)</summary>' +
@@ -2628,21 +2640,46 @@ async function toggleMemberPanel(){
   document.getElementById('mp-rules').value = buildSecurityRules();
   renderMemberList();
 }
+// 팀원 이름: dashboard/names/{이메일키} = "홍길동" (총괄 관리자만 수정)
+let memberNames = {};
+function whoCell(k, email){
+  const wrap = document.createElement('span'); wrap.className = 'mp-who';
+  const nm = document.createElement('input');
+  nm.className = 'mp-name'; nm.placeholder = '이름'; nm.value = memberNames[k] || ''; nm.maxLength = 20;
+  nm.title = '이름을 입력하고 Enter 또는 다른 곳을 누르면 저장돼요';
+  const save = async ()=>{
+    const v = nm.value.trim();
+    if(v === (memberNames[k] || '')) return;
+    try{
+      await _fbdb.ref(FIREBASE_ROOT + '/names/' + k).set(v || null);
+      if(v) memberNames[k] = v; else delete memberNames[k];
+      document.getElementById('mp-msg').textContent = email + (v ? ' → ' + v + ' 이름 저장' : ' 이름 삭제');
+    }catch(e){ document.getElementById('mp-msg').textContent = '이름 저장 실패: ' + (e.code || e.message); }
+  };
+  nm.onblur = save;
+  nm.onkeydown = ev => { if(ev.key === 'Enter'){ ev.preventDefault(); nm.blur(); } };
+  const em = document.createElement('span'); em.className = 'mp-email'; em.textContent = email;
+  wrap.append(nm, em);
+  return wrap;
+}
+
 async function renderMemberList(){
   const box = document.getElementById('mp-list'); if(!box) return;
   try{
-    const [s, a, vw] = await Promise.all([_fbdb.ref(FIREBASE_ROOT + '/members').once('value'), _fbdb.ref(FIREBASE_ROOT + '/admins').once('value'), _fbdb.ref(FIREBASE_ROOT + '/viewers').once('value')]);
+    const [s, a, vw, nmSnap] = await Promise.all([_fbdb.ref(FIREBASE_ROOT + '/members').once('value'), _fbdb.ref(FIREBASE_ROOT + '/admins').once('value'), _fbdb.ref(FIREBASE_ROOT + '/viewers').once('value'), _fbdb.ref(FIREBASE_ROOT + '/names').once('value')]);
+    memberNames = nmSnap.val() || {};
     const mv = s.val() || {}, av = a.val() || {}, vv = vw.val() || {};
     const keys = [...new Set(Object.keys(mv).filter(k => mv[k] === true).concat(Object.keys(av).filter(k => av[k] === true)))].sort();
     box.innerHTML = '';
     const ownerRow = document.createElement('div'); ownerRow.className = 'mp-row';
-    ownerRow.innerHTML = '<span>' + OWNER + '</span><span class="auth-role owner">총괄 관리자</span>';
+    ownerRow.appendChild(whoCell(emailKey(OWNER), OWNER));
+    const ob = document.createElement('span'); ob.className = 'auth-role owner'; ob.textContent = '총괄 관리자'; ownerRow.appendChild(ob);
     box.appendChild(ownerRow);
     keys.forEach(k=>{
       const email = k.replace(/,/g, '.');
       const isAdm = av[k] === true;
       const row = document.createElement('div'); row.className = 'mp-row';
-      const sp = document.createElement('span'); sp.textContent = email;
+      const sp = whoCell(k, email);
       if(isAdm){ const bd = document.createElement('span'); bd.className = 'auth-role owner'; bd.style.marginLeft = '6px'; bd.textContent = '삭제 권한'; sp.appendChild(bd); }
       const act = document.createElement('span'); act.style.cssText = 'display:inline-flex;gap:6px';
       const ad = document.createElement('button');
@@ -2657,6 +2694,7 @@ async function renderMemberList(){
       rm.onclick = async ()=>{
         await _fbdb.ref(FIREBASE_ROOT + '/admins/' + k).remove();
         await _fbdb.ref(FIREBASE_ROOT + '/members/' + k).remove();
+        try{ await _fbdb.ref(FIREBASE_ROOT + '/names/' + k).remove(); }catch(e){}
         renderMemberList();
       };
       act.append(ad, rm);
@@ -2668,10 +2706,10 @@ async function renderMemberList(){
       const h = document.createElement('div'); h.className = 'mp-desc'; h.style.margin = '10px 0 2px'; h.innerHTML = '<b>영업 열람</b> (sales.html만 볼 수 있음)'; box.appendChild(h);
       vkeys.forEach(k=>{
         const row = document.createElement('div'); row.className = 'mp-row';
-        const sp = document.createElement('span'); sp.textContent = k.replace(/,/g, '.');
+        const sp = whoCell(k, k.replace(/,/g, '.'));
         const bd = document.createElement('span'); bd.className = 'auth-role member'; bd.style.marginLeft = '6px'; bd.textContent = '영업 열람'; sp.appendChild(bd);
         const rm = document.createElement('button'); rm.textContent = '해제';
-        rm.onclick = async ()=>{ await _fbdb.ref(FIREBASE_ROOT + '/viewers/' + k).remove(); renderMemberList(); };
+        rm.onclick = async ()=>{ await _fbdb.ref(FIREBASE_ROOT + '/viewers/' + k).remove(); try{ await _fbdb.ref(FIREBASE_ROOT + '/names/' + k).remove(); }catch(e){} renderMemberList(); };
         row.append(sp, rm); box.appendChild(row);
       });
     }
@@ -2684,6 +2722,8 @@ async function addMember(){
   const role = (document.getElementById('mp-role') || {}).value || 'member';
   try{
     await _fbdb.ref(FIREBASE_ROOT + '/' + (role === 'viewer' ? 'viewers' : 'members') + '/' + emailKey(v)).set(true);
+    const nmIn = document.getElementById('mp-newname');
+    if(nmIn && nmIn.value.trim()){ await _fbdb.ref(FIREBASE_ROOT + '/names/' + emailKey(v)).set(nmIn.value.trim()); nmIn.value = ''; }
     inp.value = ''; msg.textContent = v + (role === 'viewer' ? ' 영업 열람 등록 완료' : ' 등록 완료'); renderMemberList();
   }
   catch(e){ msg.textContent = '등록 실패: ' + (e.code || e.message); }
