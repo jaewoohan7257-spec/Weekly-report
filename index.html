@@ -3853,6 +3853,7 @@ function wireWeeklyTextareas(){
     const el=document.getElementById(id);
     if(!el || el.dataset.wired) { if(el) autoGrowTextarea(el); return; }
     el.dataset.wired='1';
+    if(window.matchMedia('(pointer: coarse)').matches && el.placeholder) el.placeholder = el.placeholder.replace(/\s*\(Alt\+Enter로 줄바꿈\)/, '');
     el.oninput=()=>autoGrowTextarea(el);
     el.onkeydown=(e)=>{
       if(e.key==='Enter' && e.altKey){
@@ -4452,7 +4453,9 @@ function renderDetail(){
     const tdContent = document.createElement('td');
     const contentInp = document.createElement('textarea');
     contentInp.rows = 1;
-    contentInp.placeholder = '진행 내용 메모 (Alt+Enter로 줄바꿈)';
+    // 휴대폰·태블릿(터치)에서는 Enter가 줄바꿈, 다른 곳을 누르면 저장 / PC에서는 Enter 저장, Alt+Enter 줄바꿈
+    const touchInput = (typeof isPhone === 'function' && isPhone()) || window.matchMedia('(pointer: coarse)').matches;
+    contentInp.placeholder = touchInput ? '진행 내용 메모 (줄바꿈 가능 · 다른 곳을 누르면 저장)' : '진행 내용 메모 (Alt+Enter로 줄바꿈)';
     contentInp.value = step.content || '';
     contentInp.style.cssText = 'width:100%;box-sizing:border-box;resize:vertical;min-height:32px;overflow:hidden;font-family:inherit;font-size:13px;line-height:1.4;padding:6px 8px;border-radius:6px;border:1px solid var(--line-strong);background:var(--card);color:var(--ink)';
     contentInp.onchange = ()=>updateStep('content', step.stage, contentInp.value);
@@ -4469,6 +4472,7 @@ function renderDetail(){
         autoGrowTextarea(contentInp);
         return;
       }
+      if(touchInput) return;            // 터치 기기: Enter는 그대로 줄바꿈
       if(e.key === 'Enter' && !e.shiftKey){
         e.preventDefault();
         contentInp.blur(); // blur가 onchange를 발생시켜 저장됨
@@ -4764,7 +4768,7 @@ function tagMobileSections(){
   });
   // 더보기 탭 맨 위: 보고서·내보내기 버튼 모음
   const tools = document.createElement('div');
-  tools.className = 'panel m-tools'; tools.dataset.m = 'more';
+  tools.className = 'panel m-tools m-only'; tools.dataset.m = 'more';   // 휴대폰에서만 보임 (PC는 맨 위 버튼 사용)
   tools.innerHTML = '<h2>보고서 · 내보내기</h2>' +
     '<div class="m-tool-grid">' +
     '<button class="primary" onclick="generateReportPPT(this)">📊 보고서 PPT</button>' +
