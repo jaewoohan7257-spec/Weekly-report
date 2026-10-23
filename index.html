@@ -1721,6 +1721,32 @@ table{border:1px solid var(--line)!important;border-radius:14px!important;overfl
   .mp-add select,.mp-add button{flex:1 1 auto}
   #member-panel{padding:20px 10px}
 }
+/* 프로젝트 결과 (품목 코드·품목명) */
+.rs-row{display:grid;grid-template-columns:26px 170px 1fr 60px;gap:8px;align-items:center;margin-bottom:8px}
+.rs-no{font-size:12px;font-weight:800;color:#98a2b3;text-align:center}
+.rs-code{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.02em}
+.rs-del{padding:6px 8px;font-size:12px}
+.rs-row input{min-width:0;width:100%;box-sizing:border-box}
+#d-result-panel{overflow:hidden}
+.rs-actions{display:flex;align-items:center;gap:10px;margin-top:4px}
+#d-result-save:disabled{opacity:.45;cursor:default;box-shadow:none}
+@media (max-width:760px){ .rs-row{grid-template-columns:22px 1fr 52px} .rs-name{grid-column:2 / 3} .rs-del{grid-row:1 / span 2;grid-column:3} .rs-no{grid-row:1 / span 2} }
+/* 영업 전달 메모 (윤고딕) */
+#d-share-memo, .share-memo-panel textarea{font-family:'YoonGothic Medium','YoonGothic','윤고딕','Yoon 윤고딕 530_TT','Yoon 윤고딕 520_TT','Pretendard','Malgun Gothic',sans-serif !important;font-size:15px;line-height:1.7}
+.sm-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:8px}
+.sm-status{font-size:12.5px;font-weight:700;color:#98a2b3}
+.sm-status.dirty{color:#C9741F}.sm-status.saved{color:#087457}.sm-status.error{color:#B42318}
+#d-share-memo-save:disabled{opacity:.45;cursor:default;box-shadow:none}
+/* 영업 채널 · 샘플 */
+.sales-info{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:-8px 0 20px;padding:10px 14px;background:#f7f9fc;border:1px solid #e3e8f0;border-radius:12px}
+.si-label{font-size:13px;font-weight:800;color:#344054}
+.si-chips{display:inline-flex;gap:6px;flex-wrap:wrap}
+.si-chip{padding:5px 12px;border-radius:999px;font-size:12.5px;font-weight:700;background:#fff;border:1px solid #d6dce6;color:#5b6576;box-shadow:none}
+.si-chip.on{background:#2146C7;border-color:#2146C7;color:#fff}
+.si-sample{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:800;color:#087457;cursor:pointer;background:#fff;border:1px solid #9fd9cf;border-radius:10px;padding:5px 12px}
+.si-sample input{width:17px;height:17px;accent-color:#0E8F83}
+.sample-badge{font-size:11px;font-weight:800;color:#087457;background:#E9F8F3;border-radius:6px;padding:1px 7px;white-space:nowrap}
+@media (max-width:760px){ .si-sample{margin-left:0} }
 /* 영업 공유 상태 표시 (명확하게) */
 .share-chk{flex-direction:column;gap:3px}
 .share-chk .share-chip{font-size:10.5px;font-weight:800;border-radius:5px;padding:1px 7px}
@@ -1861,6 +1887,45 @@ body.not-owner .owner-only{display:none !important}
   .detail-topbar-name{display:none}
 }
 
+
+/* 세부 단계 (상위 단계 아래에 들여쓰기로 묶어 표시) */
+tr.has-children > td{border-bottom-color:transparent!important}
+.cs-count{display:inline-block;font-size:10.5px;font-weight:700;color:#3b6fb0;background:rgba(91,155,217,.14);border-radius:999px;padding:1px 7px;margin-left:2px}
+.custom-step-row > td{background:rgba(91,155,217,.045)}
+.custom-step-row:not(.cs-last) > td{border-bottom-color:transparent!important}
+.custom-step-row > td:first-child{position:relative;padding-left:34px!important}
+.custom-step-row > td:first-child::before{content:"";position:absolute;left:16px;top:0;bottom:0;border-left:2px solid #b9cde6}
+.custom-step-row.cs-last > td:first-child::before{bottom:50%}
+.custom-step-row > td:first-child::after{content:"";position:absolute;left:16px;top:50%;width:12px;border-top:2px solid #b9cde6}
+.cs-box{display:flex;flex-direction:column;gap:5px}
+.cs-name{width:100%;box-sizing:border-box;font:inherit;font-weight:600;font-size:12.5px;line-height:1.35;padding:4px 7px;resize:none;overflow:hidden;min-height:0;display:block;word-break:keep-all;overflow-wrap:anywhere;border:1px dashed var(--line-strong,#cbd5e1);border-radius:6px;background:var(--card,#fff);color:var(--ink,#172033)}
+.cs-name:focus{border-style:solid;outline:none;border-color:var(--accent,#3b82f6)}
+.cs-meta{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+.cs-tag{font-size:10.5px;font-weight:700;color:#3b6fb0;background:rgba(91,155,217,.14);border-radius:999px;padding:1px 7px}
+.cs-del{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:6px;border:1px solid #f1c4c4;background:#fff;color:#c24141;cursor:pointer}
+.cs-del:hover{background:#fdecec}
+.add-step{display:flex;flex-direction:column;gap:8px;margin-top:10px;padding:12px 14px;border:1px dashed var(--line-strong,#cbd5e1);border-radius:10px;background:var(--accent-soft,rgba(91,155,217,.06))}
+.add-step .as-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.add-step .as-label{font-weight:700;font-size:13px;color:var(--ink,#172033)}
+.add-step .as-hint{font-size:12px;color:var(--ink-muted,#667085)}
+.add-step .as-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.add-step .as-msg{font-size:12.5px;min-height:0}
+.add-step .as-msg:empty{display:none}
+.add-step .as-msg.ok{color:#16794c}
+.add-step .as-msg.warn{color:#b54708}
+.add-step input{flex:1 1 220px;min-width:0;padding:7px 10px;border-radius:8px;border:1px solid var(--line-strong,#cbd5e1);font:inherit;font-size:13px;background:var(--card,#fff);color:var(--ink,#172033)}
+.add-step select{max-width:260px;padding:7px 8px;border-radius:8px;font-size:13px}
+@media (max-width:760px){
+  .add-step .as-row{flex-direction:column;align-items:stretch}
+  .add-step input,.add-step select{max-width:none;font-size:16px;flex:0 0 auto;width:100%;box-sizing:border-box}
+  .cs-name{font-size:16px}
+  .tbl-scroll.w-steps tr.has-children{margin-bottom:4px!important}
+  .tbl-scroll.w-steps tr.custom-step-row{margin-left:18px;width:calc(100% - 18px)!important;border-left:3px solid #b9cde6!important;margin-bottom:4px!important;background:#f7faff!important}
+  .tbl-scroll.w-steps tr.custom-step-row.cs-last{margin-bottom:10px!important}
+  .tbl-scroll.w-steps tr.custom-step-row > td{background:transparent}
+  .tbl-scroll.w-steps tr.custom-step-row > td:first-child{padding-left:0!important}
+  .tbl-scroll.w-steps tr.custom-step-row > td:first-child::before,.tbl-scroll.w-steps tr.custom-step-row > td:first-child::after{content:none}
+}
 </style>
 </head>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
@@ -2159,11 +2224,19 @@ body.not-owner .owner-only{display:none !important}
       <option value="key">⭐ 중요도: 핵심 안건</option>
     </select>
   </div>
+  <div class="sales-info" id="d-sales-info">
+    <span class="si-label">영업 채널</span><span id="d-channels" class="si-chips"></span>
+    <label class="si-sample" title="담당자가 판단해서 체크하면 영업 공유 페이지에 '샘플 제공 가능'으로 표시돼요"><input type="checkbox" id="d-sample-ready" onchange="setSampleReady(this.checked)"> 🧪 샘플 제공 가능</label>
+  </div>
 
   <div class="panel share-memo-panel" id="d-share-memo-box" style="display:none">
     <h2>영업 전달 메모</h2>
     <p class="status-msg" style="margin:0 0 8px">영업 공유 페이지 맨 위에 강조해서 보여줄 내용이에요. 비워두면 표시되지 않아요. (내부 메모·애로사항은 따로 입력하지 않아도 공유 페이지에 함께 보여요)</p>
-    <textarea id="d-share-memo" rows="3" placeholder="예: B2B 전용 4입 규격. 급식·외식 거래처 제안용이며 단가표는 담당자에게 요청해주세요." onblur="saveSalesMemo()"></textarea>
+    <textarea id="d-share-memo" rows="3" placeholder="예: B2B 전용 4입 규격. 급식·외식 거래처 제안용이며 단가표는 담당자에게 요청해주세요." oninput="onSalesMemoInput()"></textarea>
+    <div class="sm-actions">
+      <span class="sm-status" id="d-share-memo-status"></span>
+      <button type="button" class="primary" id="d-share-memo-save" onclick="saveSalesMemo()" disabled>💾 저장</button>
+    </div>
   </div>
 
   <div class="panel">
@@ -2207,12 +2280,36 @@ body.not-owner .owner-only{display:none !important}
     </div>
     <p class="status-msg" style="margin-bottom:10px">STEP.2 시작일·마감일을 입력하면 STEP.3 원가/가격 일정에 동일하게 채워지고, STEP.2 마감일을 입력하면 STEP.4 → STEP.4-1 → STEP.5 → STEP.6(보관 유형별 리드타임) → GATE 3(STEP.6 마감일 시작, 6개월 뒤 첫째 주 목요일 마감) 일정이 영업일(주말·공휴일 제외) 기준으로 자동 채워집니다. 이미 값이 있는 단계는 자동으로 덮어쓰지 않아요. 기존 일정을 다시 맞추려면 위에서 <b>기준이 되는 단계</b>를 고르고 '일정 재계산'을 누르세요. <b>기준 단계 자체는 바뀌지 않고, 그 마감일을 바탕으로 화살표 뒤 단계들만 새로 계산해 덮어씁니다.</b> (GATE 1·2와 STEP.1은 자동 계산 대상이 아니에요)<br><b>각 단계마다 🔗 링크 추가 버튼으로 공유 드라이브 자료를 연결할 수 있어요.</b></p>
     <div class="tbl-scroll w-steps"><table>
-      <thead><tr><th style="width:140px">단계</th><th>내용</th><th style="width:90px">상태</th><th style="width:130px">시작일</th><th style="width:130px">마감일</th></tr></thead>
+      <thead><tr><th style="width:160px">단계</th><th>내용</th><th style="width:90px">상태</th><th style="width:130px">시작일</th><th style="width:130px">마감일</th></tr></thead>
       <tbody id="d-steps-body"></tbody>
     </table></div>
+    <div class="add-step" id="d-add-step">
+      <div class="as-head">
+        <span class="as-label">＋ 세부 단계 추가</span>
+        <span class="as-hint" id="d-add-step-hint"></span>
+      </div>
+      <div class="as-row">
+        <select id="d-add-step-pos" title="어느 단계 아래에 붙일지 고르세요"></select>
+        <input type="text" id="d-add-step-name" maxlength="30" placeholder="세부 단계 이름 (예: 2차 업체미팅)" onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomStep();}">
+        <button class="primary" type="button" onclick="addCustomStep()">＋ 추가</button>
+      </div>
+      <div class="as-msg" id="d-add-step-msg"></div>
+    </div>
     <div class="save-bar" id="save-bar">
       <button id="d-save-btn" onclick="saveDetailNow(this)" disabled>✓ 저장됨</button>
       <span class="status-msg" id="d-save-status" style="margin:0"></span>
+    </div>
+  </div>
+
+  <div class="panel" id="d-result-panel">
+    <h2>프로젝트 결과 (출시 품목)</h2>
+    <p class="status-msg" style="margin:0 0 10px">이 프로젝트로 나온 제품의 <b>품목 코드</b>와 <b>품목명</b>을 적어주세요. 나중에 실적(매출) 데이터를 이 코드로 연결할 예정이에요. 여러 품목이면 줄을 추가하세요.</p>
+    <div id="d-result-rows"></div>
+    <div class="rs-actions">
+      <button type="button" onclick="addResultRow()">＋ 품목 추가</button>
+      <span style="flex:1"></span>
+      <span class="sm-status" id="d-result-status"></span>
+      <button type="button" class="primary" id="d-result-save" onclick="saveResultItems()" disabled>💾 저장</button>
     </div>
   </div>
 
@@ -2569,7 +2666,7 @@ function copyPageUrl(btn){
 function inAppGuideHTML(){
   const canOpen = IN_APP === 'kakao' || IS_ANDROID;
   return '<p class="inapp-desc">지금은 <b>' + ({kakao:'카카오톡', naver:'네이버 앱', line:'라인', instagram:'인스타그램', facebook:'페이스북', slack:'슬랙'}[IN_APP] || '앱') +
-    ' 안의 브라우저</b>로 열려 있어요.<br>이 화면에서는 구글 로그인이 막혀서, <b>' + (IS_IOS ? '사파리' : '크롬') + '</b>로 열어야 해요.</p>' +
+    ' 안의 브라우저</b>로 열려 있어요.<br>이 화면에서는 구글 로그인이 막혀서, <b>' + (IS_IOS ? '사파리' : '크롬') + '</b>' + (IS_IOS ? '로' : '으로') + ' 열어야 해요.</p>' +
     (canOpen ? '<button class="primary inapp-btn" onclick="openInExternalBrowser()">' + (IS_IOS ? '사파리로' : '크롬으로') + ' 열기</button>' : '') +
     '<button class="inapp-btn ghost" onclick="copyPageUrl(this)">주소 복사하기</button>' +
     (IS_IOS && IN_APP !== 'kakao' ? '<p class="inapp-hint">오른쪽 아래(또는 위) <b>⋯ / 나침반</b> 버튼 → <b>Safari로 열기</b>를 눌러도 돼요.</p>' : '') +
@@ -2876,12 +2973,34 @@ function copyRules(){
 <script>
 const STAGES = ["STEP.1","GATE 1","STEP.2","STEP.3","STEP.4","STEP.4-1","GATE 2","STEP.5","STEP.6","GATE 3"];
 const MISC_STAGE = "기타업무";
-const STAGE_LABEL = {
+const STAGE_LABEL_BASE = {
   "STEP.1":"STEP.1 제품 기획","GATE 1":"GATE 1","STEP.2":"STEP.2 샘플링/품질",
   "STEP.3":"STEP.3 원가/가격","STEP.4":"STEP.4 표기사항","STEP.4-1":"STEP.4-1 디자인",
   "GATE 2":"GATE 2","STEP.5":"STEP.5 포장재 발주","STEP.6":"STEP.6 출시/피드백","GATE 3":"GATE 3 포스트런칭",
   "기타업무":"기타업무"
 };
+// 수동 추가 단계: stage 값이 "custom:..." 이고 이름은 step.name 에 저장. 라벨은 아래 레지스트리로 찾는다.
+const CUSTOM_STEP_PREFIX = 'custom:';
+const CUSTOM_LABELS = {};
+function isCustomStep(s){ return !!(s && typeof s.stage === 'string' && s.stage.indexOf(CUSTOM_STEP_PREFIX) === 0); }
+const CUSTOM_PLAIN = {};
+function registerCustomLabel(step){
+  if(!isCustomStep(step)) return;
+  CUSTOM_LABELS[step.stage] = '　└ ' + (step.name || '세부 단계');
+  const par = step.parent ? (STAGE_LABEL_BASE[step.parent] || step.parent) : '';
+  CUSTOM_PLAIN[step.stage] = (par ? par + ' › ' : '') + (step.name || '세부 단계');
+}
+// 문장·요약에 쓰는 단계 이름 (세부 단계는 "상위 단계 › 이름")
+function stageText(k){ return CUSTOM_PLAIN[k] || STAGE_LABEL[k] || k; }
+// 세부 단계의 상위 단계 = 배열에서 바로 앞에 있는 기본 단계
+function parentStageOf(proj, idx){ for(let i=idx-1;i>=0;i--){ if(!isCustomStep(proj.steps[i])) return proj.steps[i].stage; } return null; }
+function childCount(proj, stage){ const i = proj.steps.findIndex(x=>x.stage===stage); let n=0; for(let j=i+1;j<proj.steps.length && isCustomStep(proj.steps[j]);j++) n++; return n; }
+const STAGE_LABEL = new Proxy(STAGE_LABEL_BASE, {
+  get(t, k){
+    if(typeof k === 'string' && k.indexOf(CUSTOM_STEP_PREFIX) === 0) return CUSTOM_LABELS[k] || '　└ 세부 단계';
+    return t[k];
+  }
+});
 const STATUS_OPTS = ["예정","진행","완료"];
 const COLORS = ["#5b9bd9","#34d399","#f2a93b","#f87171","#a78bfa","#2fd6c8"];
 const STATUS_BAR_COLOR = {"완료":"#34d399","진행":"#f5a83c","예정":"#7e8bab"};
@@ -3100,7 +3219,7 @@ function emptySteps(){
 // 저장된 프로젝트 데이터를 최신 스키마로 맞춘다 (하위 호환 마이그레이션 한 곳에서 관리)
 function normalizeProject(p){
   if(!p.steps) p.steps = emptySteps();
-  p.steps.forEach(s=>{ if(s.content === undefined) s.content = ""; if(s.attachments === undefined) s.attachments = []; });
+  p.steps.forEach(s=>{ if(s.content === undefined) s.content = ""; if(s.attachments === undefined) s.attachments = []; registerCustomLabel(s); });
   if(p.status === undefined){ p.status = p.archived ? 'done' : 'active'; }
   if(p.reviewedWeek === undefined){ p.reviewedWeek = null; }
   if(p.tier === undefined){ p.tier = 'normal'; }   // 'key'(핵심) | 'normal'(일반)
@@ -3206,18 +3325,40 @@ let lastKnownJSON = null;
 function startAutoRefresh(){
   lastKnownJSON = JSON.stringify(projects);
   setInterval(async ()=>{
-    // 목록 화면에서, 입력 중이 아닐 때만 자동 갱신 (타이핑 방해 방지)
-    if(currentDetailId !== null) return;
+    // 입력 중이 아닐 때만 자동 갱신 (타이핑 방해 방지). 상세 화면에서도 다른 팀원의 변경을 받아와,
+    // 오래된 내용 위에 고쳐서 남의 변경을 덮어쓰는 일을 줄인다.
     if(hasUnsaved()) return;                      // 저장 안 된 변경이 있으면 덮어쓰지 않음
     const active = document.activeElement;
     if(active && (active.tagName === 'INPUT' || active.tagName === 'SELECT' || active.tagName === 'TEXTAREA')) return;
+    if(currentDetailId !== null && document.querySelector('#detail-view .att-form')) return;   // 링크 입력창 열려 있으면 보류
     try{
       const res = await window.storage.get('projects_v2', true);
       const fresh = res ? res.value : '[]';
-      if(fresh !== lastKnownJSON){
+      if(fresh !== lastKnownJSON && !hasUnsaved()){
         lastKnownJSON = fresh;
-        projects = JSON.parse(fresh);
-        projects.forEach(normalizeProject);
+        const remote = JSON.parse(fresh);
+        remote.forEach(normalizeProject);
+        const localMap = new Map(projects.map(p=>[p.id, p]));
+        const curBefore = currentDetailId !== null ? JSON.stringify(localMap.get(currentDetailId) || null) : null;
+        projects = remote.map(rp=>{
+          const lp = localMap.get(rp.id);
+          if(!lp) return rp;
+          Object.keys(lp).forEach(k => { if(!(k in rp)) delete lp[k]; });
+          Object.assign(lp, rp);                  // 화면이 들고 있는 객체를 유지한 채 내용만 갱신
+          return lp;
+        });
+        if(currentDetailId !== null){
+          const cur = projects.find(p=>p.id===currentDetailId);
+          if(!cur){ showList(); }
+          else if(JSON.stringify(cur) !== curBefore){
+            const y = window.scrollY;
+            renderDetail();
+            window.scrollTo(0, y);
+            const st = document.getElementById('d-save-status');
+            if(st) st.textContent = '다른 팀원이 고친 내용을 반영했어요 (' + new Date().toLocaleTimeString('ko-KR') + ')';
+          }
+          return;
+        }
         render();
         const el = document.getElementById('live-status');
         if(el){ el.textContent = '다른 팀원의 변경사항을 반영했어요 (' + new Date().toLocaleTimeString('ko-KR') + ')'; }
@@ -3243,7 +3384,10 @@ async function manualRefresh(){
 // 내가 고친 프로젝트 / 삭제한 프로젝트를 추적해서, 저장할 때 다른 팀원의 변경을 덮어쓰지 않도록 한다
 let dirtyIds = new Set();
 let deletedIds = new Set();
-function markDirty(id){ if(id != null){ dirtyIds.add(id); updateSaveIndicator(); } }
+// 저장이 진행되는 동안 새로 고친 항목은 '저장됨'으로 지워지지 않도록 순번으로 구분한다
+let dirtySeq = 0;
+const dirtyAt = new Map();
+function markDirty(id){ if(id != null){ dirtyIds.add(id); dirtyAt.set(id, ++dirtySeq); updateSaveIndicator(); } }
 function markDeleted(id){ if(id != null){ deletedIds.add(id); dirtyIds.delete(id); updateSaveIndicator(); } }
 function hasUnsaved(){ return dirtyIds.size > 0 || deletedIds.size > 0; }
 
@@ -3268,6 +3412,8 @@ async function saveData(statusElId, opts){
   opts = opts || {};
   const statusEl = statusElId ? document.getElementById(statusElId) : null;
   if(statusEl) statusEl.textContent = '저장 중...';
+  const seqAtStart = dirtySeq;                 // 이 시점까지 고친 것만 이번 저장으로 처리
+  const deletingNow = new Set(deletedIds);
   try{
     // 저장 직전에 최신본을 읽어와, 내가 바꾼 것만 얹는다 (다른 팀원 변경 보존)
     let remote = null;
@@ -3310,8 +3456,8 @@ async function saveData(statusElId, opts){
     projects = merged;
     projects.forEach(normalizeProject);
     lastKnownJSON = jsonStr;
-    dirtyIds.clear();
-    deletedIds.clear();
+    [...dirtyIds].forEach(id=>{ if((dirtyAt.get(id) || 0) <= seqAtStart){ dirtyIds.delete(id); dirtyAt.delete(id); } });
+    deletingNow.forEach(id=>deletedIds.delete(id));
     updateSaveIndicator();
 
     if(statusEl){
@@ -3425,18 +3571,135 @@ function renderSalesShareDetail(p){
   if(memoBox){
     memoBox.style.display = isShareChecked(p) ? '' : 'none';
     const ta = document.getElementById('d-share-memo');
-    if(ta && document.activeElement !== ta) ta.value = p.salesMemo || '';
+    // 저장 안 한 입력이 있으면 덮어쓰지 않는다 (자동 새로고침 중에도 입력 유지)
+    if(ta && !ta.dataset.dirty){ ta.value = p.salesMemo || ''; setSalesMemoStatus(p.salesMemo ? 'saved' : ''); }
   }
 }
-function saveSalesMemo(){
+// 영업 전달 메모: [저장]을 눌러야 저장되고 영업 공유 페이지에 반영된다
+function setSalesMemoStatus(state, extra){
+  const st = document.getElementById('d-share-memo-status');
+  const btn = document.getElementById('d-share-memo-save');
+  if(btn) btn.disabled = (state !== 'dirty' && state !== 'error');
+  if(!st) return;
+  st.className = 'sm-status ' + (state || '');
+  st.textContent = {dirty:'● 저장 안 된 변경이 있어요', saving:'저장 중...', saved:'✓ 저장됨' + (extra || ''), error:'⚠ 저장에 실패했어요. 다시 눌러주세요.'}[state] || '';
+}
+function onSalesMemoInput(){
   const p = projects.find(x => x.id === currentDetailId);
   const ta = document.getElementById('d-share-memo');
   if(!p || !ta) return;
-  const v = ta.value.trim();
-  if(v === (p.salesMemo || '')) return;
-  p.salesMemo = v;
+  const changed = ta.value.trim() !== (p.salesMemo || '');
+  if(changed) ta.dataset.dirty = '1'; else delete ta.dataset.dirty;
+  setSalesMemoStatus(changed ? 'dirty' : (p.salesMemo ? 'saved' : ''));
+}
+async function saveSalesMemo(){
+  const p = projects.find(x => x.id === currentDetailId);
+  const ta = document.getElementById('d-share-memo');
+  if(!p || !ta) return;
+  p.salesMemo = ta.value.trim();
+  markDirty(p.id);
+  setSalesMemoStatus('saving');
+  const ok = await saveData('d-save-status');
+  if(ok === false){ setSalesMemoStatus('error'); return; }
+  delete ta.dataset.dirty;
+  setSalesMemoStatus('saved', p.salesShare ? ' · 영업 공유 페이지에 반영됐어요' : ' · 영업 공유를 반영하면 함께 보여요');
+}
+window.addEventListener('beforeunload', e=>{ const ta = document.getElementById('d-share-memo'); if(ta && ta.dataset.dirty){ e.preventDefault(); e.returnValue = ''; } });
+
+// ===== 프로젝트 결과: 품목 코드 · 품목명 (실적 연계용) =====
+// p.resultItems = [{code:'1000123', name:'꼬치어묵 국민 500g'}, ...]  — [저장]을 눌러야 저장된다
+let resultDraft = null;      // 편집 중인 목록 (저장 전)
+function resultItemsOf(p){ return (p.resultItems || []).map(x => ({code: x.code || '', name: x.name || ''})); }
+function resultDirty(p){
+  const clean = a => JSON.stringify(a.filter(x => x.code.trim() || x.name.trim()).map(x => ({code: x.code.trim(), name: x.name.trim()})));
+  return resultDraft && clean(resultDraft) !== clean(resultItemsOf(p));
+}
+function setResultStatus(state, txt){
+  const st = document.getElementById('d-result-status'), btn = document.getElementById('d-result-save');
+  if(btn) btn.disabled = !(state === 'dirty' || state === 'error');
+  if(st){ st.className = 'sm-status ' + (state || ''); st.textContent = txt || {dirty:'● 저장 안 된 변경이 있어요', saving:'저장 중...', error:'⚠ 저장에 실패했어요. 다시 눌러주세요.'}[state] || ''; }
+}
+function renderResultItems(p, force){
+  const box = document.getElementById('d-result-rows'); if(!box || !p) return;
+  // force = 지금 편집본으로 다시 그리기 / 그 외에는 저장 안 한 변경이 없을 때만 최신 데이터로 갱신
+  if(!resultDraft || (!force && !resultDirty(p))) resultDraft = resultItemsOf(p);
+  if(!resultDraft.length) resultDraft.push({code:'', name:''});
+  // 입력 중인 칸이 있으면 다시 그리지 않는다 (자동 새로고침 중 커서 유지)
+  if(!force && box.contains(document.activeElement)) return;
+  box.innerHTML = '';
+  resultDraft.forEach((it, i)=>{
+    const row = document.createElement('div'); row.className = 'rs-row';
+    const no = document.createElement('span'); no.className = 'rs-no'; no.textContent = (i + 1);
+    const code = document.createElement('input'); code.className = 'rs-code'; code.placeholder = '품목 코드'; code.value = it.code; code.maxLength = 30;
+    const name = document.createElement('input'); name.className = 'rs-name'; name.placeholder = '품목명 (예: 꼬치어묵 국민 500g)'; name.value = it.name; name.maxLength = 80;
+    const del = document.createElement('button'); del.type = 'button'; del.className = 'rs-del'; del.textContent = '삭제'; del.title = '이 품목 줄 삭제 (저장해야 반영돼요)';
+    const upd = ()=>{ it.code = code.value; it.name = name.value; setResultStatus(resultDirty(p) ? 'dirty' : ''); };
+    code.oninput = upd; name.oninput = upd;
+    [code, name].forEach(el => el.onkeydown = ev => { if(ev.key === 'Enter'){ ev.preventDefault(); if(resultDirty(p)) saveResultItems(); } });
+    del.onclick = ()=>{ resultDraft.splice(i, 1); renderResultItems(p, true); setResultStatus(resultDirty(p) ? 'dirty' : ''); resultDraftKeep(); };
+    row.append(no, code, name, del); box.appendChild(row);
+  });
+  if(!resultDirty(p)){
+    const n = resultItemsOf(p).filter(x => x.code || x.name).length;
+    setResultStatus(n ? 'saved' : '', n ? '✓ 저장된 품목 ' + n + '개' : '');
+  }
+}
+function resultDraftKeep(){}   // (삭제 후 상태 유지용 자리)
+function addResultRow(){
+  const p = projects.find(x => x.id === currentDetailId); if(!p) return;
+  if(!resultDraft) resultDraft = resultItemsOf(p);
+  resultDraft.push({code:'', name:''});
+  renderResultItems(p, true);
+  const rows = document.querySelectorAll('#d-result-rows .rs-code'); if(rows.length) rows[rows.length-1].focus();
+  setResultStatus(resultDirty(p) ? 'dirty' : '');
+}
+async function saveResultItems(){
+  const p = projects.find(x => x.id === currentDetailId); if(!p || !resultDraft) return;
+  const items = resultDraft.map(x => ({code: x.code.trim(), name: x.name.trim()})).filter(x => x.code || x.name);
+  const dup = items.map(x => x.code).filter((c, i, a) => c && a.indexOf(c) !== i);
+  if(dup.length){ setResultStatus('error', '⚠ 같은 품목 코드가 두 번 들어갔어요: ' + dup[0]); return; }
+  p.resultItems = items;
+  markDirty(p.id);
+  setResultStatus('saving');
+  const ok = await saveData('d-save-status');
+  if(ok === false){ setResultStatus('error'); return; }
+  resultDraft = null;
+  renderResultItems(p, true);
+  setResultStatus('saved', '✓ 저장했어요 · 품목 ' + items.length + '개');
+}
+window.addEventListener('beforeunload', e=>{ const p = projects.find(x => x.id === currentDetailId); if(p && resultDirty(p)){ e.preventDefault(); e.returnValue = ''; } });
+
+// ===== 영업 채널 · 샘플 제공 =====
+const SALES_CHANNELS = ['KAM','B2B','온라인','수출','매장','기타'];
+function renderSalesInfo(p){
+  const box = document.getElementById('d-channels'); if(!box || !p) return;
+  const cur = new Set(p.salesChannels || []);
+  box.innerHTML = '';
+  SALES_CHANNELS.forEach(c=>{
+    const b = document.createElement('button'); b.type = 'button';
+    b.className = 'si-chip' + (cur.has(c) ? ' on' : '');
+    b.setAttribute('aria-pressed', cur.has(c) ? 'true' : 'false');
+    b.textContent = c;
+    b.onclick = ()=> toggleChannel(p.id, c);
+    box.appendChild(b);
+  });
+  const sr = document.getElementById('d-sample-ready'); if(sr) sr.checked = !!p.sampleReady;
+}
+function toggleChannel(id, c){
+  const p = projects.find(x => x.id === id); if(!p) return;
+  const set = new Set(p.salesChannels || []);
+  set.has(c) ? set.delete(c) : set.add(c);
+  p.salesChannels = SALES_CHANNELS.filter(x => set.has(x));     // 정해진 순서 유지
+  markDirty(p.id);                                               // 진행 업데이트가 아니라 업데이트 날짜는 그대로
+  saveData('d-save-status');
+  renderSalesInfo(p);
+}
+function setSampleReady(on){
+  const p = projects.find(x => x.id === currentDetailId); if(!p) return;
+  p.sampleReady = !!on;
   markDirty(p.id);
   saveData('d-save-status');
+  render();
 }
 
 // ===== 제품 유형(카테고리) =====
@@ -4119,6 +4382,79 @@ function autoGrowTextarea(el){
   el.style.height = el.scrollHeight + 'px';
 }
 
+// ── 수동 추가 단계 ─────────────────────────────
+function renderAddStepPos(proj){
+  const sel = document.getElementById('d-add-step-pos'); if(!sel) return;
+  const prev = sel.dataset.for === String(proj.id) ? sel.value : null;
+  sel.innerHTML = '';
+  const parents = proj.steps.filter(st=>!isCustomStep(st));
+  parents.forEach(st=>{
+    const o = document.createElement('option');
+    o.value = st.stage; o.textContent = stageText(st.stage) + ' 의 세부 단계로';
+    sel.appendChild(o);
+  });
+  sel.style.display = parents.length > 1 ? '' : 'none';   // 기타업무처럼 상위가 하나면 선택칸 숨김
+  const hint = document.getElementById('d-add-step-hint');
+  if(hint) hint.textContent = proj.misc
+    ? '한 번에 끝나지 않는 업무는 기타업무 아래에 이어서 적어두세요. 예) 2차 업체미팅, 계약서 검토'
+    : '한 단계 안에서 따로 챙길 일을 그 단계 아래에 붙여요. 기본 단계와 일정 자동연동·진행률은 그대로예요.';
+  const nmInp = document.getElementById('d-add-step-name');
+  if(nmInp) nmInp.placeholder = proj.misc ? '세부 단계 이름 (예: 2차 업체미팅)' : '세부 단계 이름 (예: 관능 평가)';
+  let def = parents.length ? parents[parents.length-1].stage : '';
+  if(!proj.misc) def = currentStageOf(proj);
+  sel.value = (prev && proj.steps.some(x=>x.stage===prev)) ? prev : def;
+  sel.dataset.for = String(proj.id);
+  const m = document.getElementById('d-add-step-msg'); if(m && m.dataset.for !== String(proj.id)){ setAddStepMsg(''); m.dataset.for = String(proj.id); }
+}
+function setAddStepMsg(text, tone){
+  const m = document.getElementById('d-add-step-msg'); if(!m) return;
+  m.textContent = text || ''; m.className = 'as-msg' + (tone ? ' ' + tone : '');
+  clearTimeout(m._t); if(text && tone === 'ok') m._t = setTimeout(()=>{ m.textContent=''; m.className='as-msg'; }, 6000);
+}
+function addCustomStep(){
+  const proj = projects.find(p=>p.id===currentDetailId); if(!proj) return;
+  const inp = document.getElementById('d-add-step-name'), msg = document.getElementById('d-add-step-msg');
+  const name = (inp.value || '').trim();
+  if(!name){ setAddStepMsg('추가할 세부 단계 이름을 먼저 적어주세요.', 'warn'); inp.focus(); return; }
+  const selEl = document.getElementById('d-add-step-pos');
+  const parent = selEl.value || (proj.steps.filter(x=>!isCustomStep(x)).pop() || {}).stage;
+  const id = CUSTOM_STEP_PREFIX + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+  const step = {stage:id, custom:true, parent, name, status:'예정', start:'', end:'', content:'', attachments:[]};
+  registerCustomLabel(step);
+  let idx = proj.steps.findIndex(x=>x.stage===parent);
+  if(idx < 0) idx = proj.steps.length-1;
+  while(idx+1 < proj.steps.length && isCustomStep(proj.steps[idx+1])) idx++;   // 같은 상위의 기존 세부 단계 맨 뒤
+  proj.steps.splice(idx+1, 0, step);
+  markDirty(proj.id);
+  proj.updatedAt = new Date().toISOString();
+  saveData('d-save-status');
+  inp.value = '';
+  renderDetail();
+  const pl = stageText(parent);
+  setAddStepMsg('✓ ' + pl + ' 아래에 「' + name + '」을(를) 추가했어요. 표에서 내용·상태·일정을 입력하면 자동 저장돼요.', 'ok');
+  const ni = document.getElementById('d-add-step-name'); if(ni) ni.focus();
+}
+function renameCustomStep(stage, name){
+  const proj = projects.find(p=>p.id===currentDetailId); if(!proj) return;
+  const step = proj.steps.find(x=>x.stage===stage); if(!step) return;
+  name = (name || '').trim();
+  if(!name){ renderDetail(); return; }
+  if(name === step.name) return;
+  step.name = name; registerCustomLabel(step);
+  markDirty(proj.id); proj.updatedAt = new Date().toISOString();
+  saveData('d-save-status'); renderDetail();
+}
+function removeCustomStep(stage){
+  const proj = projects.find(p=>p.id===currentDetailId); if(!proj) return;
+  const i = proj.steps.findIndex(x=>x.stage===stage); if(i < 0 || !isCustomStep(proj.steps[i])) return;
+  const st = proj.steps[i];
+  const hasData = (st.content||'').trim() || st.start || st.end || (st.attachments||[]).length;
+  if(!confirm('"' + (st.name||'세부 단계') + '" 세부 단계를 삭제할까요?' + (hasData ? '\n입력한 내용·일정·링크도 함께 지워지고, 되돌릴 수 없어요.' : ''))) return;
+  proj.steps.splice(i, 1);
+  markDirty(proj.id); proj.updatedAt = new Date().toISOString();
+  saveData('d-save-status'); renderDetail();
+}
+
 function updateStep(field, stage, value){
   const proj = projects.find(p=>p.id===currentDetailId);
   if(!proj) return;
@@ -4161,7 +4497,7 @@ function forceRecalc(btn){
   const anchorStep = proj.steps.find(s=>s.stage===anchor);
 
   if(!anchorStep || !anchorStep.end){
-    setRecalcMsg('먼저 ' + (STAGE_LABEL[anchor] || anchor) + '의 마감일을 입력해주세요.', 'warn');
+    setRecalcMsg('먼저 ' + stageText(anchor) + '의 마감일을 입력해주세요.', 'warn');
     return;
   }
 
@@ -4359,6 +4695,9 @@ function renderDetail(){
   const tierSel = document.getElementById('d-tier');
   if(tierSel) tierSel.value = proj.tier || 'normal';
   renderSalesShareDetail(proj);
+  renderSalesInfo(proj);
+  if(window.__resultFor !== proj.id){ window.__resultFor = proj.id; resultDraft = null; }
+  renderResultItems(proj);
   const ptw = document.getElementById('d-ptype-wrap');
   if(ptw){ ptw.innerHTML = ''; const sel = productTypeSelect(proj.productType, v => setProductType(proj, v, 'd-save-status'), {placeholder:'유형: 미지정'}); sel.style.width = 'auto'; ptw.appendChild(sel); }
   renderWeeklyLog(proj);
@@ -4368,9 +4707,12 @@ function renderDetail(){
   document.getElementById('d-progress-fill').style.width = pct + '%';
   const overdueCount = proj.steps.filter(isOverdue).length;
   const upcomingCount = proj.steps.filter(s=>isUpcoming(s)).length;
-  const doneN = proj.steps.filter(s=>s.status==='완료').length;
-  const runN  = proj.steps.filter(s=>s.status==='진행').length;
-  let progressText = pct + '%  (완료 ' + doneN + ' · 진행 ' + runN + ' / 전체 ' + proj.steps.length + '단계, 단계별 소요기간 가중 반영)';
+  // 파이프라인은 기본 단계 기준(세부 단계는 별도 표기), 기타업무는 세부 단계 포함
+  const baseSteps = proj.misc ? proj.steps : proj.steps.filter(s=>!isCustomStep(s));
+  const subN = proj.misc ? 0 : proj.steps.length - baseSteps.length;
+  const doneN = baseSteps.filter(s=>s.status==='완료').length;
+  const runN  = baseSteps.filter(s=>s.status==='진행').length;
+  let progressText = pct + '%  (완료 ' + doneN + ' · 진행 ' + runN + ' / 전체 ' + baseSteps.length + '단계' + (subN ? ' + 세부 ' + subN + '개' : '') + ', 단계별 소요기간 가중 반영)';
   const progressEl = document.getElementById('d-progress-text');
   progressEl.textContent = progressText;
   if(overdueCount > 0){
@@ -4440,16 +4782,41 @@ function renderDetail(){
 
   const body = document.getElementById('d-steps-body');
   body.innerHTML = '';
-  proj.steps.forEach(step=>{
+  proj.steps.forEach((step, stepIdx)=>{
     const tr = document.createElement('tr');
     const overdue = isOverdue(step);
     const upcoming = !overdue && isUpcoming(step);
     if(overdue) tr.className = 'overdue-row';
     else if(upcoming) tr.className = 'upcoming-row';
     const tdStage = document.createElement('td');
-    tdStage.innerHTML = STAGE_LABEL[step.stage] + ' <span class="badge ' + step.status + '">' + step.status + '</span>'
+    const flagsHtml = ' <span class="badge ' + step.status + '">' + step.status + '</span>'
       + (overdue ? ' <span class="overdue-flag" title="마감일(' + step.end + ')이 지났어요">⚠ 지연</span>' : '')
       + (upcoming ? ' <span class="upcoming-flag" title="마감일(' + step.end + ')이 임박했어요">🕓 임박</span>' : '');
+    if(isCustomStep(step)){
+      tr.classList.add('custom-step-row');
+      const nxt = proj.steps[stepIdx+1];
+      if(!nxt || !isCustomStep(nxt)) tr.classList.add('cs-last');
+      const nm = document.createElement('textarea');
+      nm.rows = 1; nm.className = 'cs-name'; nm.value = step.name || ''; nm.maxLength = 30;
+      nm.oninput = ()=>{ nm.value = nm.value.replace(/\n/g,' '); autoGrowTextarea(nm); };
+      nm.placeholder = '세부 단계 이름'; nm.title = '세부 단계 — 이름을 바로 고칠 수 있어요';
+      nm.onchange = ()=>renameCustomStep(step.stage, nm.value);
+      nm.onkeydown = (e)=>{ if(e.key === 'Enter'){ e.preventDefault(); nm.blur(); } };
+      const tag = document.createElement('div'); tag.className = 'cs-meta';
+      const par = parentStageOf(proj, stepIdx);
+      tag.innerHTML = '<span class="cs-tag">' + escapeHtml((STAGE_LABEL[par] || '').replace(/^STEP\.[\d-]+\s*/,'') || '세부') + ' 세부</span>' + flagsHtml;
+      const del = document.createElement('button');
+      del.type = 'button'; del.className = 'cs-del'; del.textContent = '삭제'; del.title = '이 세부 단계 삭제';
+      del.onclick = ()=>removeCustomStep(step.stage);
+      tag.appendChild(del);
+      const box = document.createElement('div'); box.className = 'cs-box';
+      box.append(nm, tag);
+      tdStage.appendChild(box);
+    } else {
+      const kids = childCount(proj, step.stage);
+      tdStage.innerHTML = STAGE_LABEL[step.stage] + flagsHtml + (kids ? ' <span class="cs-count" title="아래 세부 단계 ' + kids + '개">세부 ' + kids + '</span>' : '');
+      if(kids) tr.classList.add('has-children');
+    }
     const tdContent = document.createElement('td');
     const contentInp = document.createElement('textarea');
     contentInp.rows = 1;
@@ -4507,6 +4874,7 @@ function renderDetail(){
 
   // 모든 행이 실제 문서에 붙은 뒤에 높이를 재야 정확히 측정되므로, 루프가 끝난 뒤 한 번에 처리
   body.querySelectorAll('textarea').forEach(autoGrowTextarea);
+  renderAddStepPos(proj);
 
   renderGantt(proj);
 }
@@ -4844,7 +5212,7 @@ function nextDueOf(p){
   const st = p.steps.find(s => s.stage === currentStageOf(p));
   if(!st || !st.end) return null;
   const n = Math.round((parseLocalDate(st.end) - parseLocalDate(todayISO())) / 86400000);
-  return {label: (STAGE_LABEL[st.stage] || st.stage), end: st.end, n};
+  return {label: stageText(st.stage), end: st.end, n};
 }
 function renderMobileCards(list){
   const box = document.getElementById('m-cards'); if(!box) return;
@@ -4985,7 +5353,8 @@ function render(){
       if(p.name.toLowerCase().includes(searchTerm)) return true;
       if(p.owner.toLowerCase().includes(searchTerm)) return true;
       if((p.productType || '').toLowerCase().includes(searchTerm)) return true;
-      if(p.steps.some(s => (s.content||'').toLowerCase().includes(searchTerm))) return true;
+      if((p.resultItems || []).some(x => (x.code + ' ' + x.name).toLowerCase().includes(searchTerm))) return true;
+      if(p.steps.some(s => (s.content||'').toLowerCase().includes(searchTerm) || (s.name||'').toLowerCase().includes(searchTerm))) return true;
       return false;
     });
   }
@@ -5070,6 +5439,11 @@ function render(){
       render();
     };
     nameWrap.insertBefore(star, nameWrap.firstChild);
+    if(p.sampleReady){
+      const smb = document.createElement('span');
+      smb.className = 'sample-badge'; smb.textContent = '🧪 샘플 가능';
+      nameWrap.appendChild(smb);
+    }
     if(p.salesShare){
       const sb = document.createElement('span');
       sb.className = 'shared-badge'; sb.textContent = '📤 영업 공유 중';
@@ -5599,11 +5973,11 @@ function buildChangeBrief(cg){
     headline = cg.stageA + ' → ' + cg.stageB + ' 후퇴';
     tone = 'bad';
   } else if(doneSteps.length){
-    headline = (STAGE_LABEL[doneSteps[0].stage] || doneSteps[0].stage) + ' 완료'
+    headline = stageText(doneSteps[0].stage) + ' 완료'
              + (doneSteps.length > 1 ? ' 외 ' + (doneSteps.length-1) + '건' : '');
     tone = 'good';
   } else if(startSteps.length){
-    headline = (STAGE_LABEL[startSteps[0].stage] || startSteps[0].stage) + ' 착수';
+    headline = stageText(startSteps[0].stage) + ' 착수';
     tone = 'good';
   }
 
@@ -5620,7 +5994,7 @@ function buildChangeBrief(cg){
   });
   if(shifts.length){
     const worst = shifts.reduce((a,b)=> Math.abs(b.days) > Math.abs(a.days) ? b : a);
-    const label = (STAGE_LABEL[worst.stage] || worst.stage);
+    const label = stageText(worst.stage);
     const word = worst.days > 0 ? '연기' : '단축';
     let txt = label + ' 마감 ' + Math.abs(worst.days) + '일 ' + word + ' (→' + worst.after + ')';
     if(shifts.length > 1) txt += ' 외 ' + (shifts.length-1) + '건';
@@ -5633,7 +6007,7 @@ function buildChangeBrief(cg){
   const contents = cg.stepChanges.filter(sc=>sc.field === '내용' && sc.after && sc.after.trim());
   if(contents.length){
     const last = contents[contents.length-1];
-    const label = (STAGE_LABEL[last.stage] || last.stage);
+    const label = stageText(last.stage);
     bullets.push({icon:'📝', text: label + ' — ' + summarizeText(last.after, 45)
       + (contents.length > 1 ? '  (외 ' + (contents.length-1) + '개 단계 업데이트)' : '')});
     if(!headline) headline = '진행 내용 업데이트';
@@ -6184,7 +6558,7 @@ function projectToStyledRows(proj){
   }
   // 내용이 없으면 진행률로 대체
   if(!projSummary) projSummary = '진행률 ' + progressOf(proj) + '%';
-  const projStatus = proj.misc ? '기타업무' : (STAGE_LABEL[curStage] || curStage);
+  const projStatus = proj.misc ? '기타업무' : stageText(curStage);
 
   rows.push({type:'project', cells:[
     '[' + ((TEAMS[proj.team]||{}).label || '상품마케팅팀') + '][' + proj.owner + '] ' + proj.name,
@@ -6566,7 +6940,7 @@ async function replaceTeamProjects(team, newItems){
     projects = JSON.parse(r.value || '[]');
     projects.forEach(normalizeProject);
     lastKnownJSON = r.value;
-    dirtyIds.clear(); deletedIds.clear();
+    dirtyIds.clear(); dirtyAt.clear(); deletedIds.clear();
     updateSaveIndicator();
   }
   return info;
@@ -6754,8 +7128,17 @@ async function loadSnapshots(){
   }catch(e){
     snapshots = [];
   }
+  registerSnapshotCustomLabels();
   renderSnapshots();
   renderNewOverdueBanner();
+}
+// 지난 주 스냅샷에만 남아 있는 추가 단계(이후 삭제/이름변경)도 비교 화면에서 이름이 보이도록
+function registerSnapshotCustomLabels(){
+  try{
+    (snapshots||[]).forEach(sn=>(sn.data||[]).forEach(p=>(p.steps||[]).forEach(st=>{
+      if(isCustomStep(st) && !CUSTOM_LABELS[st.stage]) registerCustomLabel(st);
+    })));
+  }catch(e){}
 }
 
 function computeNewlyOverdue(){
@@ -7037,11 +7420,21 @@ function diffSnapshots(dataA, dataB){
     const stepChanges = [];
     pB.steps.forEach(stepB=>{
       const stepA = pA.steps.find(s=>s.stage===stepB.stage);
-      if(!stepA) return;
+      if(!stepA){
+        if(isCustomStep(stepB)) stepChanges.push({stage:stepB.stage, field:'세부 단계', before:'-', after:'추가 (' + (stepB.status||'예정') + ')'});
+        return;
+      }
+      if(isCustomStep(stepB) && (stepA.name||'') !== (stepB.name||'')) stepChanges.push({stage:stepB.stage, field:'이름', before:stepA.name||'-', after:stepB.name||'-'});
       if(stepA.status !== stepB.status) stepChanges.push({stage:stepB.stage, field:'상태', before:stepA.status, after:stepB.status});
       if((stepA.start||'') !== (stepB.start||'')) stepChanges.push({stage:stepB.stage, field:'시작일', before:stepA.start||'-', after:stepB.start||'-'});
       if((stepA.end||'') !== (stepB.end||'')) stepChanges.push({stage:stepB.stage, field:'마감일', before:stepA.end||'-', after:stepB.end||'-'});
       if((stepA.content||'') !== (stepB.content||'')) stepChanges.push({stage:stepB.stage, field:'내용', before:stepA.content||'(없음)', after:stepB.content||'(없음)'});
+    });
+    (pA.steps||[]).forEach(stepA=>{
+      if(isCustomStep(stepA) && !pB.steps.some(s=>s.stage===stepA.stage)){
+        registerCustomLabel(Object.assign({}, stepA));
+        stepChanges.push({stage:stepA.stage, field:'세부 단계', before:'있음', after:'삭제'});
+      }
     });
     if(stageA !== stageB || stepChanges.length > 0){
       changed.push({id, name:pB.name, owner:pB.owner, stageA, stageB, stepChanges});
@@ -7176,14 +7569,14 @@ function renderCompareResults(weekA, weekB, diff){
       cg.stepChanges.forEach(sc=>{
         (byStage[sc.stage] = byStage[sc.stage] || []).push(sc);
       });
-      const stageOrder = STAGES.filter(s=>byStage[s]);
+      const stageOrder = Object.keys(byStage);   // 단계 순서대로(세부 단계·기타업무 포함)
       stageOrder.forEach(st=>{
         const grp = document.createElement('div');
         grp.className = 'cmp-stage-grp';
 
         const gh = document.createElement('div');
         gh.className = 'cmp-stage-name';
-        gh.textContent = STAGE_LABEL[st] || st;
+        gh.textContent = stageText(st);
         grp.appendChild(gh);
 
         byStage[st].forEach(sc=>{
@@ -7240,7 +7633,7 @@ function buildChangeInsight(cg){
 
   // 상태 변화: 어느 단계가 무엇으로 바뀌었는지 구체적으로
   cg.stepChanges.filter(sc=>sc.field === '상태').forEach(sc=>{
-    const st = (STAGE_LABEL[sc.stage] || sc.stage);
+    const st = stageText(sc.stage);
     if(sc.after === '완료'){
       notes.push(st + ' 완료');
       if(tone === 'neutral') tone = 'good';
@@ -7252,10 +7645,15 @@ function buildChangeInsight(cg){
     }
   });
 
+  // 세부 단계 추가·삭제
+  cg.stepChanges.filter(sc=>sc.field === '세부 단계').forEach(sc=>{
+    notes.push(stageText(sc.stage) + (sc.after === '삭제' ? ' 세부 단계 삭제' : ' 세부 단계 추가'));
+  });
+
   // 일정 변경: 며칠, 어느 단계, 언제로
   cg.stepChanges.filter(sc=>sc.field === '마감일' || sc.field === '시작일').forEach(sc=>{
     const b = sc.before, a = sc.after;
-    const st = (STAGE_LABEL[sc.stage] || sc.stage);
+    const st = stageText(sc.stage);
     if(!/^\d{4}-\d{2}-\d{2}$/.test(b) || !/^\d{4}-\d{2}-\d{2}$/.test(a)){
       if(/^\d{4}-\d{2}-\d{2}$/.test(a)) notes.push(st + ' ' + sc.field + ' ' + a + ' 신규 지정');
       return;
@@ -7271,7 +7669,7 @@ function buildChangeInsight(cg){
 
   // 진행 내용: 실제로 새로 적힌 내용을 요약해서 보여준다
   cg.stepChanges.filter(sc=>sc.field === '내용').forEach(sc=>{
-    const st = (STAGE_LABEL[sc.stage] || sc.stage);
+    const st = stageText(sc.stage);
     const txt = summarizeText(sc.after);
     if(!txt) return;
     notes.push(st + ': ' + txt);
@@ -7306,7 +7704,7 @@ async function exportCompareToExcel(){
       rows.push({kind:'단계이동', cells:['단계이동', c.name, c.owner, '', '현재 단계', c.stageA, c.stageB]});
     }
     c.stepChanges.forEach(sc=>{
-      rows.push({kind:'단계상세', cells:['단계상세', c.name, c.owner, STAGE_LABEL[sc.stage], sc.field, sc.before, sc.after]});
+      rows.push({kind:'단계상세', cells:['단계상세', c.name, c.owner, stageText(sc.stage), sc.field, sc.before, sc.after]});
     });
   });
 
@@ -8168,7 +8566,7 @@ async function generateReportPPT(btn){
     dateChanged.forEach(c=>{
       const sc = c.stepChanges.find(x=> x.field==='마감일') || c.stepChanges.find(x=> x.field==='시작일');
       detailLines.push({mark:'◆', color:AMBER_C,
-        text:c.owner + ' · ' + c.name + '  —  ' + STAGE_LABEL[sc.stage] + ' ' + sc.field + ' ' + sc.before + ' → ' + sc.after});
+        text:c.owner + ' · ' + c.name + '  —  ' + stageText(sc.stage) + ' ' + sc.field + ' ' + sc.before + ' → ' + sc.after});
     });
     diff.added.forEach(p=> detailLines.push({
       mark:'＋', color:ACCENT_C, text:p.owner + ' · ' + p.name + '  —  신규 등록'}));

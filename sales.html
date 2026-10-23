@@ -64,7 +64,7 @@ select{font:inherit;font-size:13.5px;border:1px solid var(--line);border-radius:
 .side .sample .s{border-radius:6px;padding:2px 8px;font-size:12px}
 .s.ok{background:var(--teal-soft);color:var(--teal)}
 .s.wait{background:var(--bg);color:var(--ink-2)}
-.memo{font-size:14px;color:var(--ink);margin:0;line-height:1.6}
+.memo{font-size:14px;color:var(--ink);margin:0;line-height:1.6;font-family:'YoonGothic Medium','YoonGothic','윤고딕','Yoon 윤고딕 530_TT','Yoon 윤고딕 520_TT','Pretendard','Malgun Gothic',sans-serif;white-space:pre-wrap}
 .upd{margin-top:10px;font-size:12px;color:var(--ink-3)}
 .empty{padding:40px;text-align:center;color:var(--ink-3)}
 footer{margin-top:26px;font-size:12.5px;color:var(--ink-3);line-height:1.7}
@@ -94,7 +94,8 @@ footer{margin-top:26px;font-size:12.5px;color:var(--ink-3);line-height:1.7}
 .fact .k{font-size:12px;color:var(--ink-3);font-weight:600}
 .fact .v{font-size:19px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}
 .fact .v small{font-size:12px;font-weight:700;margin-left:6px}
-.salesmemo{background:var(--blue-soft);border-radius:14px;padding:14px 18px;margin-bottom:20px}
+.salesmemo{background:var(--blue-soft);border-radius:14px;padding:14px 18px;margin-bottom:20px;font-family:'YoonGothic Medium','YoonGothic','윤고딕','Yoon 윤고딕 530_TT','Yoon 윤고딕 520_TT','Pretendard','Malgun Gothic',sans-serif;font-size:15px;line-height:1.7;white-space:pre-wrap}
+.salesmemo .k{font-family:'Pretendard',sans-serif}
 .salesmemo .k{font-size:12px;font-weight:800;color:var(--blue);margin-bottom:4px}
 .card{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:20px 22px;margin-bottom:18px}
 .card h3{font-size:16px;margin:0 0 14px;font-weight:800}
@@ -174,6 +175,23 @@ footer{margin-top:26px;font-size:12.5px;color:var(--ink-3);line-height:1.7}
 .inapp-btn.primary{background:#315EF6;color:#fff;border:none}
 .inapp-btn.ghost{background:#fff;color:#172033;border:1px solid #e3e8f0}
 .inapp-hint{font-size:12.5px;line-height:1.6;color:#9a650b;background:#fff8e6;border-radius:8px;padding:8px 10px;margin:12px 0 0}
+
+.ch-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 12px;border-bottom:2px solid var(--line);padding-bottom:0}
+.ch-tab{border:none;background:none;font:inherit;font-size:15px;font-weight:800;color:var(--ink-3);padding:10px 14px 12px;margin-bottom:-2px;border-bottom:3px solid transparent;cursor:pointer}
+.ch-tab span{font-size:12px;font-weight:700;color:var(--ink-3);margin-left:2px}
+.ch-tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--blue)}
+.ch-tab[aria-selected="true"] span{color:var(--blue)}
+.list{background:none!important;border:none!important;border-radius:0!important;overflow:visible!important}
+.ch-group{margin-bottom:26px}
+.ch-h{font-size:20px;font-weight:800;margin:0 0 10px;letter-spacing:-.02em}
+.ch-h span{font-size:13px;color:var(--ink-3);font-weight:700;margin-left:4px}
+.cat-group{margin-bottom:14px}
+.cat-h{display:flex;align-items:center;gap:6px;font-size:13.5px;font-weight:800;color:var(--ink-2);margin:0 0 8px 2px}
+.cat-h::before{content:'';width:8px;height:8px;border-radius:2px;background:var(--blue)}
+.cat-h span{font-size:12px;color:var(--ink-3)}
+.cat-items{background:var(--paper);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.s.no{background:#FFF0F0;color:#B42318}
+.items-t{width:100%;border-collapse:collapse;font-size:14px}.items-t td{padding:9px 10px;border-bottom:1px solid #F0F2F6}.items-t .ic{width:150px;font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:700;color:var(--blue)}
 </style>
 </head>
 <body>
@@ -191,6 +209,7 @@ footer{margin-top:26px;font-size:12.5px;color:var(--ink-3);line-height:1.7}
   </header>
 
 
+  <div class="ch-tabs" id="ch-tabs" role="tablist" aria-label="채널"></div>
   <div class="bar" role="toolbar" aria-label="필터">
     <div id="cats" style="display:flex;gap:8px;flex-wrap:wrap"></div>
     <button class="chip" id="sample-only" aria-pressed="false">샘플 바로 가능한 것만</button>
@@ -223,7 +242,7 @@ const pd = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m
 const dayDiff = (a, b) => Math.round((pd(a) - pd(b)) / 86400000);
 const md = s => { const d = pd(s); return (d.getMonth()+1) + '.' + String(d.getDate()).padStart(2,'0'); };
 
-let state = {cat: '전체', sampleOnly: false, sort: 'launch'};
+let state = {ch: '전체', cat: '전체', sampleOnly: false, sort: 'launch'};
 
 function ddInfo(p){
   if(!p.launch) return {txt:'일정 협의 중', cls:''};
@@ -233,13 +252,27 @@ function ddInfo(p){
   if(n === 0) return {txt:'오늘 출시', cls:'soon'};
   return {txt:'D-' + n, cls: n <= 21 ? 'soon' : ''};
 }
+// 샘플 제공 여부: 현황판에서 담당자가 체크한 값 그대로
 function sampleInfo(p){
-  if(!p.sample) return {txt:'일정 협의 중', cls:'wait'};
-  return dayDiff(p.sample, TODAY) <= 0 ? {txt:'제공 가능', cls:'ok'} : {txt: md(p.sample) + ' 이후 가능', cls:'wait'};
+  return p.sampleReady ? {txt:'제공 가능', cls:'ok'} : {txt:'제공 불가', cls:'no'};
 }
+const CHANNEL_ORDER = ['KAM','B2B','온라인','수출','매장','기타','미지정'];
 
 function renderControls(){
-  const cats = ['전체', ...new Set(DATA.map(p=>p.cat))];
+  const tabs = document.getElementById('ch-tabs');
+  const chs = CHANNEL_ORDER.filter(c => DATA.some(p => p.channels.includes(c)));
+  if(state.ch !== '전체' && !chs.includes(state.ch)) state.ch = '전체';
+  tabs.innerHTML = '';
+  ['전체', ...chs].forEach(c=>{
+    const n = c === '전체' ? DATA.length : DATA.filter(p => p.channels.includes(c)).length;
+    const b = document.createElement('button'); b.className = 'ch-tab'; b.setAttribute('role','tab');
+    b.setAttribute('aria-selected', String(state.ch === c));
+    b.innerHTML = c + ' <span>' + n + '</span>';
+    b.onclick = ()=>{ state.ch = c; state.cat = '전체'; renderControls(); renderList(); };
+    tabs.appendChild(b);
+  });
+  const inCh = DATA.filter(p => state.ch === '전체' || p.channels.includes(state.ch));
+  const cats = ['전체', ...new Set(inCh.map(p=>p.cat))];
   const box = document.getElementById('cats');
   box.innerHTML = '';
   cats.forEach(c=>{
@@ -253,17 +286,19 @@ function renderControls(){
 }
 
 function renderList(){
-  let rows = DATA.filter(p => (state.cat === '전체' || p.cat === state.cat) && (!state.sampleOnly || sampleInfo(p).cls === 'ok'));
+  let rows = DATA.filter(p => (state.ch === '전체' || p.channels.includes(state.ch)) && (state.cat === '전체' || p.cat === state.cat) && (!state.sampleOnly || sampleInfo(p).cls === 'ok'));
   rows.sort((a,b)=> state.sort === 'updated' ? (a.updated < b.updated ? 1 : -1) : ((a.launch || '9') < (b.launch || '9') ? -1 : 1));
   document.getElementById('count').textContent = rows.length + '개 제품';
   const list = document.getElementById('list');
   if(!rows.length){ list.innerHTML = '<div class="empty">' + (DATA.length ? '조건에 맞는 제품이 없어요.' : '아직 공유된 제품이 없어요. 상품마케팅팀이 공유를 켜면 여기에 바로 나타나요.') + '</div>'; return; }
-  list.innerHTML = rows.map(p=>{
+  // 1차: 채널 → 2차: 카테고리로 묶어서 보여준다 (여러 채널에 걸친 제품은 각 채널에 모두 표시)
+  const chList = state.ch === '전체' ? CHANNEL_ORDER.filter(c => rows.some(p => p.channels.includes(c))) : [state.ch];
+  const rowHTML = p=>{
     const dd = ddInfo(p), sm = sampleInfo(p);
     const at = STAGE_POS[p.stage] ?? 0;
     const segs = STEP_NAMES.map((_, i)=> '<i class="' + (i < at ? 'on' : (i === at ? 'now' : '')) + '"></i>').join('');
     const nowTxt = p.stage === 'GATE 3' ? '개발 단계를 <b>모두 마쳤어요</b>' : '지금 <b>' + p.stageLabel + '</b> 단계예요';
-    return '<article class="row" id="row-' + p.id + '">' +
+    return '<article class="row">' +
       '<div class="when"><div class="d">' + (p.launch ? md(p.launch) : '—') + '</div>' +
         '<div class="y">' + (p.launch ? pd(p.launch).getFullYear() + '년 출시 예정' : '') + '</div>' +
         '<span class="dd ' + dd.cls + '">' + dd.txt + '</span></div>' +
@@ -278,7 +313,17 @@ function renderList(){
         (p.memo ? '<p class="memo">' + esc(p.memo) + '</p>' : '') +
         '<div class="upd">' + (p.updated ? p.updated.slice(5).replace('-','/') + ' 업데이트' : '') + '</div></div>' +
     '</article>';
+  };
+  list.innerHTML = chList.map(ch=>{
+    const inCh = rows.filter(p => p.channels.includes(ch));
+    const cats = [...new Set(inCh.map(p => p.cat))];
+    return '<section class="ch-group"><h2 class="ch-h">' + esc(ch) + ' <span>' + inCh.length + '개</span></h2>' +
+      cats.map(c => {
+        const items = inCh.filter(p => p.cat === c);
+        return '<div class="cat-group"><h3 class="cat-h">' + esc(c) + ' <span>' + items.length + '</span></h3><div class="cat-items">' + items.map(rowHTML).join('') + '</div></div>';
+      }).join('') + '</section>';
   }).join('');
+  document.getElementById('count').textContent = rows.length + '개 제품' + (chList.length > 1 ? ' · ' + chList.length + '개 채널' : '');
   list.querySelectorAll('[data-open]').forEach(b=> b.onclick = ()=> openDetail(b.dataset.open));
 }
 
@@ -359,6 +404,8 @@ function renderDetail(p){
       '<div class="fact"><div class="k">샘플</div><div class="v" style="font-size:16px">' + sm.txt + '</div></div>' +
     '</div>' +
     (p.memo ? '<div class="salesmemo"><div class="k">영업 전달 메모</div>' + esc(p.memo) + '</div>' : '') +
+    (p.items.length ? '<section class="card"><h3>출시 품목<small>품목 코드 · 품목명</small></h3><table class="items-t"><tbody>' +
+      p.items.map(x => '<tr><td class="ic">' + esc(x.code || '—') + '</td><td>' + esc(x.name || '') + '</td></tr>').join('') + '</tbody></table></section>' : '') +
     '<section class="card"><h3>일정<small>막대가 짧은 단계도 날짜를 옆에 표시해요</small></h3><div class="g">' + ganttHTML(p) + '</div></section>' +
     '<section class="card"><h3>단계별 진행 내용<small>현황판 상세 화면의 메모·첨부 링크와 같아요</small></h3>' +
       '<table class="steps-t"><thead><tr><th>단계</th><th>상태</th><th>기간</th><th>진행 내용</th></tr></thead><tbody>' + stepsRows + '</tbody></table></section>' +
@@ -386,17 +433,17 @@ const emailKey = e => String(e || '').trim().toLowerCase().replace(/\./g, ',');
 
 // 공유 사본(현황판 프로젝트 원본 + 단계·진행률) → 화면용 모양
 function toView(p){
-  const steps = (p.steps || []).map(s => ({stage: s.stage, label: STAGE_LABEL[s.stage] || s.stage, status: s.status || '예정',
+  const steps = (p.steps || []).map(s => ({stage: s.stage, label: (String(s.stage).indexOf('custom:')===0 ? ('└ ' + (s.name || '세부 단계')) : (STAGE_LABEL[s.stage] || s.stage)), status: s.status || '예정',
     start: s.start || '', end: s.end || '', content: s.content || '',
     links: (s.attachments || []).filter(a => a && a.url).map(a => ({name: a.name || '링크', url: a.url}))}));
   const stage = p._stage || (steps.find(s => s.status !== '완료') || {stage: 'GATE 3'}).stage;
   const done = steps.filter(s => s.status === '완료').length;
   const get = st => steps.find(s => s.stage === st) || {};
   return {
-    id: String(p.id), cat: p.productType || '미분류', name: p.name || '', owner: p.owner || '',
+    id: String(p.id), cat: p.productType || '미분류', channels: (p.salesChannels && p.salesChannels.length) ? p.salesChannels : ['미지정'], sampleReady: !!p.sampleReady, name: p.name || '', owner: p.owner || '',
     stage, stageLabel: SHORT(stage), progress: (typeof p._progress === 'number') ? p._progress : Math.round(done / Math.max(steps.length, 1) * 100),
     launch: get('STEP.6').end || '', sample: get('STEP.2').end || '', memo: p.salesMemo || '',
-    updated: (p.updatedAt || '').slice(0, 10), storage: p.storageType || '', steps,
+    updated: (p.updatedAt || '').slice(0, 10), items: (p.resultItems || []).filter(x => x && (x.code || x.name)), storage: p.storageType || '', steps,
     log: (p.weeklyLog || []).slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''))
   };
 }
@@ -431,7 +478,7 @@ function copyPageUrl(btn){
 function inAppGuideHTML(){
   const canOpen = IN_APP === 'kakao' || IS_ANDROID;
   return '<p class="inapp-desc">지금은 <b>' + ({kakao:'카카오톡', naver:'네이버 앱', line:'라인', instagram:'인스타그램', facebook:'페이스북', slack:'슬랙'}[IN_APP] || '앱') +
-    ' 안의 브라우저</b>로 열려 있어요.<br>이 화면에서는 구글 로그인이 막혀서, <b>' + (IS_IOS ? '사파리' : '크롬') + '</b>로 열어야 해요.</p>' +
+    ' 안의 브라우저</b>로 열려 있어요.<br>이 화면에서는 구글 로그인이 막혀서, <b>' + (IS_IOS ? '사파리' : '크롬') + '</b>' + (IS_IOS ? '로' : '으로') + ' 열어야 해요.</p>' +
     (canOpen ? '<button class="primary inapp-btn" onclick="openInExternalBrowser()">' + (IS_IOS ? '사파리로' : '크롬으로') + ' 열기</button>' : '') +
     '<button class="inapp-btn ghost" onclick="copyPageUrl(this)">주소 복사하기</button>' +
     (IS_IOS && IN_APP !== 'kakao' ? '<p class="inapp-hint">오른쪽 아래(또는 위) <b>⋯ / 나침반</b> 버튼 → <b>Safari로 열기</b>를 눌러도 돼요.</p>' : '') +
