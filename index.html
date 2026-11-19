@@ -2278,7 +2278,7 @@ tr.has-children > td{border-bottom-color:transparent!important}
       </select>
       <p class="status-msg" style="margin:0;align-self:center">보관 유형에 따라 STEP.6 리드타임과 그 이후 GATE 3 일정이 달라져요.</p>
     </div>
-    <p class="status-msg" style="margin-bottom:10px">STEP.2 시작일·마감일을 입력하면 STEP.3 원가/가격 일정에 동일하게 채워지고, STEP.2 마감일을 입력하면 STEP.4 → STEP.4-1 → STEP.5 → STEP.6(보관 유형별 리드타임) → GATE 3(STEP.6 마감일 시작, 6개월 뒤 첫째 주 목요일 마감) 일정이 영업일(주말·공휴일 제외) 기준으로 자동 채워집니다. 이미 값이 있는 단계는 자동으로 덮어쓰지 않아요. 기존 일정을 다시 맞추려면 위에서 <b>기준이 되는 단계</b>를 고르고 '일정 재계산'을 누르세요. <b>기준 단계 자체는 바뀌지 않고, 그 마감일을 바탕으로 화살표 뒤 단계들만 새로 계산해 덮어씁니다.</b> (GATE 1·2와 STEP.1은 자동 계산 대상이 아니에요)<br><b>각 단계마다 🔗 링크 추가 버튼으로 공유 드라이브 자료를 연결할 수 있어요.</b></p>
+    <p class="status-msg" style="margin-bottom:10px">STEP.2 시작일·마감일을 입력하면 STEP.3 원가/가격 일정에 동일하게 채워지고, STEP.2 마감일을 입력하면 STEP.4 → STEP.4-1 → STEP.5 → STEP.6(보관 유형별 리드타임) → GATE 3(STEP.6 마감일 시작, 6개월 뒤 첫째 주 목요일 마감) 일정이 영업일(주말·공휴일 제외) 기준으로 자동 채워집니다. <b>앞 단계 마감일이나 보관 유형을 바꾸면 자동으로 계산된 뒤 단계들도 함께 옮겨지고, 직접 입력해 바꾼 단계는 그대로 둡니다.</b> 직접 입력한 일정까지 모두 다시 맞추려면 위에서 <b>기준이 되는 단계</b>를 고르고 '일정 재계산'을 누르세요. <b>기준 단계 자체는 바뀌지 않고, 그 마감일을 바탕으로 화살표 뒤 단계들만 새로 계산해 덮어씁니다.</b> (GATE 1·2와 STEP.1은 자동 계산 대상이 아니에요)<br><b>각 단계마다 🔗 링크 추가 버튼으로 공유 드라이브 자료를 연결할 수 있어요.</b></p>
     <div class="tbl-scroll w-steps"><table>
       <thead><tr><th style="width:160px">단계</th><th>내용</th><th style="width:90px">상태</th><th style="width:130px">시작일</th><th style="width:130px">마감일</th></tr></thead>
       <tbody id="d-steps-body"></tbody>
@@ -4360,19 +4360,21 @@ function updateStorageType(){
   if(!proj) return;
   markDirty(proj.id);
   const sel = document.getElementById('d-storage-type');
+  const oldWeeks = step6WeeksFor(proj);
   proj.storageType = sel.value || null;
   proj.updatedAt = new Date().toISOString();
-  // STEP.6이 아직 비어있다면(수기 값 없음) 새 보관 유형 기준으로 바로 한 번 계산해준다
-  const s6 = proj.steps.find(s=>s.stage==='STEP.6');
-  const hadS6 = !!(s6 && (s6.start || s6.end));
-  cascadeFrom(proj, 'STEP.5', false);
+  // STEP.6이 비어 있거나 예전 보관유형 기준 자동계산 값 그대로면 새 리드타임으로 옮기고 GATE 3까지 따라 옮긴다
+  const s5 = proj.steps.find(s=>s.stage==='STEP.5');
+  const r = (s5 && s5.end) ? shiftAutoChain(proj, 'STEP.5', s5.end, oldWeeks) : {moved:[], kept:null};
+  const hadS6 = r.kept === 'STEP.6';
   saveData('d-save-status');
   renderDetail();
+  if(r.moved.length) setRecalcMsg('✓ 보관 유형(' + (proj.storageType || '미입력') + ') 리드타임에 맞춰 ' + r.moved.join(' · ') + ' 일정을 옮겼어요.', 'ok');
   // 이미 STEP.6 일정이 있으면 덮어쓰지 않으므로, 재계산 방법을 안내하고 기준 단계를 미리 골라둔다
   if(hadS6){
     const anchor = document.getElementById('recalc-anchor');
     if(anchor) anchor.value = 'STEP.5';
-    setRecalcMsg('보관 유형이 바뀌었어요. STEP.6 일정에 반영하려면 \'일정 재계산\'을 눌러주세요. (STEP.5 마감일 기준으로 미리 골라뒀어요)', 'warn');
+    setRecalcMsg('보관 유형이 바뀌었어요. STEP.6 일정은 직접 입력한 값이라 그대로 뒀어요. 새 리드타임으로 맞추려면 \'일정 재계산\'을 눌러주세요. (STEP.5 기준으로 미리 골라뒀어요)', 'warn');
   }
 }
 
@@ -4455,22 +4457,115 @@ function removeCustomStep(stage){
   saveData('d-save-status'); renderDetail();
 }
 
+// ── 날짜 입력칸 ─────────────────────────────
+// 달력에서 고르면 바로 반영, 키보드로 칠 때는 다 치고 칸을 벗어나거나 Enter를 눌렀을 때 한 번만 반영한다.
+// (한 글자마다 반영하면 표가 다시 그려지며 커서가 빠지고, 0006년 같은 잘못된 날짜가 저장·연동되던 문제)
+function isValidStepDate(v){
+  if(!v) return true;                                   // 비우기는 허용
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
+  if(!m) return false;
+  const y = +m[1];
+  return y >= 2000 && y <= 2099;
+}
+function bindDateInput(inp, commit){
+  let typing = false, original = inp.value;
+  const fire = ()=>{
+    typing = false;
+    const v = inp.value;
+    if(v === original) return;
+    if(!isValidStepDate(v)){
+      inp.value = original;
+      setRecalcMsg('날짜를 다시 확인해주세요. (연도는 2000~2099년, 예: 2026-12-18)', 'warn');
+      return;
+    }
+    original = v;
+    commit(v);
+  };
+  inp.addEventListener('keydown', e=>{
+    if(e.key === 'Enter'){ e.preventDefault(); fire(); return; }
+    if(e.key !== 'Tab' && e.key !== 'Shift') typing = true;
+  });
+  inp.addEventListener('change', ()=>{ if(!typing) fire(); });   // 달력 선택·지우기 버튼
+  inp.addEventListener('focus', ()=>{ typing = false; });
+  inp.addEventListener('blur', ()=>{ if(inp.value !== original) fire(); else typing = false; });
+}
+
+// ── 일정 자동연동 ───────────────────────────
+// 기준 단계 마감일(fromEnd)로 대상 단계 일정을 계산 (weeksOverride: 보관유형 변경 전 값 계산용)
+function chainCalc(proj, spec, fromEnd, weeksOverride){
+  if(!fromEnd) return null;
+  if(spec === 'GATE3_SPECIAL') return computeGate3Dates(fromEnd);
+  const weeks = weeksOverride != null ? weeksOverride : ((typeof spec === 'function') ? spec(proj) : spec);
+  const start = addBusinessDays(fromEnd, 1);
+  return {start, end: addBusinessDays(start, weeks*5 - 1)};
+}
+// stage 마감일이 oldEnd → 현재 값으로 바뀌었을 때, 뒤 단계들을 따라 옮긴다.
+// 비어 있거나 '예전 자동계산 값 그대로'인 단계만 옮기고, 직접 입력해 바꾼 단계를 만나면 거기서 멈춘다.
+// 반환: {moved:[단계], kept:단계|null}
+function shiftAutoChain(proj, stage, oldEnd, oldWeeksFor){
+  const moved = [];
+  let kept = null;
+  let link = LEAD_CHAIN.find(l=>l[0]===stage);
+  let oldFromEnd = oldEnd;
+  while(link){
+    const [fromStage, toStage, spec] = link;
+    const fromStep = proj.steps.find(s=>s.stage===fromStage);
+    const toStep = proj.steps.find(s=>s.stage===toStage);
+    if(!fromStep || !toStep || !fromStep.end) break;
+    const empty = !toStep.start && !toStep.end;
+    const oldW = (oldWeeksFor && toStage === 'STEP.6') ? oldWeeksFor : null;
+    const expectedOld = chainCalc(proj, spec, oldFromEnd, oldW);
+    const wasAuto = empty || (expectedOld && toStep.start === expectedOld.start && toStep.end === expectedOld.end);
+    if(!wasAuto){ kept = toStage; break; }
+    const next = chainCalc(proj, spec, fromStep.end);
+    oldFromEnd = toStep.end;                                // 다음 단계 비교용: 바뀌기 전 값
+    if(toStep.start !== next.start || toStep.end !== next.end){
+      toStep.start = next.start; toStep.end = next.end; moved.push(toStage);
+    }
+    link = LEAD_CHAIN.find(l=>l[0]===toStage);
+  }
+  return {moved, kept};
+}
+// STEP.2 → STEP.3 같은 '그대로 복사' 규칙: 비어 있거나 예전 기준값과 같으면 새 값으로
+function shiftCopyRules(proj, stage, field, oldVal){
+  const moved = [];
+  COPY_RULES.forEach(([from, to])=>{
+    if(from !== stage) return;
+    const f = proj.steps.find(s=>s.stage===from), t = proj.steps.find(s=>s.stage===to);
+    if(!f || !t || !f[field]) return;
+    if(!t[field] || t[field] === oldVal){ if(t[field] !== f[field]){ t[field] = f[field]; moved.push(to); } }
+  });
+  return moved;
+}
+function reportShift(stage, moved, kept){
+  const uniq = [...new Set(moved)];
+  if(!uniq.length && !kept) return;
+  let msg = '';
+  if(uniq.length) msg = '✓ ' + stageText(stage) + ' 일정에 맞춰 ' + uniq.join(' · ') + ' 일정도 함께 옮겼어요.';
+  if(kept) msg += (msg ? ' ' : '') + kept + '부터는 직접 입력한 일정이라 그대로 뒀어요. 함께 맞추려면 \'일정 재계산\'을 눌러주세요.';
+  setRecalcMsg(msg, kept ? 'warn' : 'ok');
+}
+
 function updateStep(field, stage, value){
   const proj = projects.find(p=>p.id===currentDetailId);
   if(!proj) return;
   markDirty(proj.id);
   const step = proj.steps.find(s=>s.stage===stage);
   if(!step) return;
+  const oldVal = step[field] || '';
   step[field] = value;
   proj.updatedAt = new Date().toISOString();
-  if(field === 'end' && LEAD_CHAIN.some(l=>l[0]===stage)){
-    cascadeFrom(proj, stage, false);
+  let moved = [], kept = null;
+  if((field === 'start' || field === 'end') && value && COPY_RULES.some(([f])=>f===stage)){
+    moved = moved.concat(shiftCopyRules(proj, stage, field, oldVal));
   }
-  if((field === 'start' || field === 'end') && COPY_RULES.some(([f])=>f===stage)){
-    applyCopyRules(proj, stage, false);
+  if(field === 'end' && value && LEAD_CHAIN.some(l=>l[0]===stage)){
+    const r = shiftAutoChain(proj, stage, oldVal);
+    moved = moved.concat(r.moved); kept = r.kept;
   }
   saveData('d-save-status');
   renderDetail();
+  if(field === 'start' || field === 'end') reportShift(stage, moved, kept);
 }
 
 function setRecalcMsg(text, tone){
@@ -4479,7 +4574,7 @@ function setRecalcMsg(text, tone){
   el.textContent = text || '';
   el.className = 'recalc-msg' + (tone ? ' ' + tone : '');
   if(el._msgTimer) clearTimeout(el._msgTimer);
-  if(text) el._msgTimer = setTimeout(()=>{ el.textContent=''; el.className='recalc-msg'; }, 5000);
+  if(text) el._msgTimer = setTimeout(()=>{ el.textContent=''; el.className='recalc-msg'; }, text.length > 40 ? 9000 : 5000);
 }
 
 function forceRecalc(btn){
@@ -4860,13 +4955,13 @@ function renderDetail(){
     const tdStart = document.createElement('td');
     const startInp = document.createElement('input');
     startInp.type = 'date'; startInp.value = step.start || '';
-    startInp.onchange = ()=>updateStep('start', step.stage, startInp.value);
+    bindDateInput(startInp, v=>updateStep('start', step.stage, v));
     tdStart.appendChild(startInp);
     const tdEnd = document.createElement('td');
     const endInp = document.createElement('input');
     endInp.type = 'date'; endInp.value = step.end || '';
     if(overdue) endInp.style.borderColor = 'var(--danger)';
-    endInp.onchange = ()=>updateStep('end', step.stage, endInp.value);
+    bindDateInput(endInp, v=>updateStep('end', step.stage, v));
     tdEnd.appendChild(endInp);
     tr.append(tdStage, tdContent, tdStatus, tdStart, tdEnd);
     body.appendChild(tr);
