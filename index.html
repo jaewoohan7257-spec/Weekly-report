@@ -1938,6 +1938,7 @@ th.sortable:hover{color:var(--accent,#2563eb)}
 .sort-ind{font-size:10px;color:var(--accent,#2563eb)}
 #owner-analysis-panel .sec-head-row{margin-bottom:8px}
 .sec-head-row .sort-inline{margin-left:auto}
+.sec-head-row .sort-inline2{margin-left:0}
 .co-open{padding:6px 10px;border-radius:8px;font-size:12.5px;white-space:nowrap}
 #cat-order-modal{position:fixed;inset:0;z-index:2000;background:rgba(15,23,42,.38);display:flex;align-items:center;justify-content:center;padding:16px}
 #cat-order-modal .co-card{background:var(--card,#fff);color:var(--ink,#172033);border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.25);width:min(460px,100%);max-height:calc(100vh - 32px);display:flex;flex-direction:column;padding:16px 18px}
@@ -2110,10 +2111,16 @@ th.sortable:hover{color:var(--accent,#2563eb)}
     <div class="sec-head-row">
       <h2 id="sec-owner">담당자별 현황 분석</h2>
       <label class="sort-inline">정렬
-        <select id="owner-sort" onchange="setOwnerSort(this.value)">
-          <option value="default">등록순</option>
-          <option value="name">가나다순</option>
+        <select id="owner-sort" onchange="setOwnerSort(this.value)" title="담당자 카드를 놓는 순서">
+          <option value="default">담당자 등록순</option>
+          <option value="name">담당자 가나다순</option>
           <option value="count">프로젝트 많은 순</option>
+        </select>
+      </label>
+      <label class="sort-inline sort-inline2">카드 안
+        <select id="owner-inner-sort" onchange="setOwnerInnerSort(this.value)" title="담당자 카드 안 프로젝트 순서">
+          <option value="default">기본 순서</option>
+          <option value="name">가나다순</option>
           <option value="mine">내 카테고리 순서</option>
         </select>
       </label>
@@ -3382,11 +3389,15 @@ async function applyCatOrder(){
   }catch(e){ if(msg) msg.textContent = '저장 실패: ' + (e && e.message || e); return; }
   closeCatOrder();
   setProjSort('mine', true);
-  ownerSortMode = 'mine'; savePref('dash_owner_sort', 'mine');
+  ownerInnerSort = 'mine'; savePref('dash_owner_inner', 'mine');      // 카드 안 순서만 바꾸고, 담당자 카드 순서는 그대로
   render();
 }
 
 let ownerSortMode = loadPref('dash_owner_sort', 'default');
+// 카드 안 프로젝트 순서 (담당자 카드 순서와 따로). 예전 설정(가나다순/내 순서를 한 칸에서 고르던 것)은 옮겨온다.
+let ownerInnerSort = loadPref('dash_owner_inner', ownerSortMode === 'name' ? 'name' : (ownerSortMode === 'mine' ? 'mine' : 'default'));
+if(ownerSortMode === 'mine'){ ownerSortMode = 'default'; savePref('dash_owner_sort', 'default'); }
+function setOwnerInnerSort(v){ ownerInnerSort = v || 'default'; savePref('dash_owner_inner', ownerInnerSort); renderKeepingView('owner-analysis-panel'); }
 let projSortMode = loadPref('dash_proj_sort', 'default');
 function setProjSort(v, noRender){ projSortMode = v || 'default'; savePref('dash_proj_sort', projSortMode); if(!noRender) renderKeepingView('sec-list'); }
 function toggleHeaderSort(k){
@@ -3397,7 +3408,7 @@ function setOwnerSort(v){ ownerSortMode = v; savePref('dash_owner_sort', v); ren
 // 담당자 이름 목록을 현재 정렬 기준으로 정렬 (counts: 담당자별 프로젝트 수)
 function sortOwnerNames(names, counts){
   const list = names.slice();
-  if(ownerSortMode === 'name' || ownerSortMode === 'mine') list.sort(koCompare);
+  if(ownerSortMode === 'name') list.sort(koCompare);
   else if(ownerSortMode === 'count') list.sort((a,b)=> ((counts&&counts[b])||0) - ((counts&&counts[a])||0) || koCompare(a,b));
   return list;
 }
@@ -4171,6 +4182,8 @@ function computeGate3Dates(step6End){
   const firstOfMonth = new Date(d.getFullYear(), d.getMonth(), 1);
   const offsetToThu = (4 - firstOfMonth.getDay() + 7) % 7; // 4 = 목요일
   const firstThursday = new Date(d.getFullYear(), d.getMonth(), 1 + offsetToThu);
+  // 첫째 목요일이 공휴일(예: 2028-10-05 추석)이면 다음 영업일로
+  while(!isBusinessDay(firstThursday)) firstThursday.setDate(firstThursday.getDate() + 1);
   return { start, end: toDateStr(firstThursday) };
 }
 
@@ -6068,9 +6081,10 @@ function renderOwnerAnalysis(){
   const counts = {}; order.forEach(o=>counts[o]=map[o].length);
   order = sortOwnerNames(order, counts);
   const sortSel = document.getElementById('owner-sort'); if(sortSel) sortSel.value = ownerSortMode;
+  const innerSel = document.getElementById('owner-inner-sort'); if(innerSel) innerSel.value = ownerInnerSort;
   // 카드 안 프로젝트도 가나다순 모드에서는 이름순
-  if(ownerSortMode === 'name') order.forEach(o=>map[o].sort(compareByName));
-  else if(ownerSortMode === 'mine') order.forEach(o=>map[o].sort(compareByMine));
+  if(ownerInnerSort === 'name') order.forEach(o=>map[o].sort(compareByName));
+  else if(ownerInnerSort === 'mine') order.forEach(o=>map[o].sort(compareByMine));
 
   const wrap = document.createElement('div');
   wrap.className = 'owner-grid';
