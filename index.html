@@ -1640,6 +1640,7 @@ table{border:1px solid var(--line)!important;border-radius:14px!important;overfl
   body[data-mtab="mine"] .tbl-scroll.w-list, body[data-mtab="all"] .tbl-scroll.w-list{display:none}
   #project-list-panel .add-row{grid-template-columns:1fr 1fr!important}
   #project-list-panel .add-row #proj-search{grid-column:1 / -1}
+  #project-list-panel .add-row .co-open{grid-column:1 / -1}
   #m-cards{display:flex;flex-direction:column;gap:10px;margin-top:6px}
   .m-card{background:#fff;border:1px solid #e3e8f0;border-radius:14px;padding:14px 14px 10px;box-shadow:0 2px 8px rgba(16,24,40,.04);cursor:pointer;-webkit-tap-highlight-color:transparent}
   .m-card:active{background:#f7f9ff}
@@ -1926,6 +1927,45 @@ tr.has-children > td{border-bottom-color:transparent!important}
   .tbl-scroll.w-steps tr.custom-step-row > td:first-child{padding-left:0!important}
   .tbl-scroll.w-steps tr.custom-step-row > td:first-child::before,.tbl-scroll.w-steps tr.custom-step-row > td:first-child::after{content:none}
 }
+
+/* 가나다순 정렬 */
+.sec-head-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.sec-head-row h2{margin-bottom:0}
+.sort-inline{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-muted,#667085);font-weight:600}
+.sort-inline select{padding:5px 8px;border-radius:8px;font-size:12.5px}
+th.sortable{cursor:pointer;user-select:none;white-space:nowrap}
+th.sortable:hover{color:var(--accent,#2563eb)}
+.sort-ind{font-size:10px;color:var(--accent,#2563eb)}
+#owner-analysis-panel .sec-head-row{margin-bottom:8px}
+.sec-head-row .sort-inline{margin-left:auto}
+.co-open{padding:6px 10px;border-radius:8px;font-size:12.5px;white-space:nowrap}
+#cat-order-modal{position:fixed;inset:0;z-index:2000;background:rgba(15,23,42,.38);display:flex;align-items:center;justify-content:center;padding:16px}
+#cat-order-modal .co-card{background:var(--card,#fff);color:var(--ink,#172033);border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.25);width:min(460px,100%);max-height:calc(100vh - 32px);display:flex;flex-direction:column;padding:16px 18px}
+.co-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:15px}
+.co-x{border:none;background:transparent;font-size:16px;cursor:pointer;padding:4px 8px}
+.co-desc{font-size:12.5px;color:var(--ink-muted,#667085);margin:0 0 10px;line-height:1.5}
+.co-note{margin:8px 0 0}
+.co-list{list-style:none;margin:0;padding:0;overflow:auto;flex:1 1 auto;border:1px solid var(--line,#e5e7eb);border-radius:10px}
+.co-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--line,#eef0f3);background:var(--card,#fff)}
+.co-item:last-child{border-bottom:none}
+.co-item.dragging{opacity:.45}
+.co-item.over{box-shadow:inset 0 2px 0 var(--accent,#2563eb)}
+.co-grip{cursor:grab;color:#9aa4b2;font-size:15px}
+.co-num{width:20px;text-align:right;font-size:12px;color:#9aa4b2;font-variant-numeric:tabular-nums}
+.co-name{flex:1;font-weight:700;font-size:13.5px}
+.co-cnt{font-size:12px;color:var(--ink-muted,#667085)}
+.co-mv{width:32px;height:30px;padding:0;border-radius:7px;font-size:12px}
+.co-mv:disabled{opacity:.3}
+.co-empty{padding:14px;font-size:13px;color:var(--ink-muted,#667085)}
+.co-foot{display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
+.co-foot .co-msg{flex:1;font-size:12px;color:var(--ink-muted,#667085)}
+@media (max-width:760px){
+  .co-item{padding:10px}
+  .co-mv{width:40px;height:36px;font-size:14px}
+  .co-grip{display:none}
+  .co-foot button{flex:1 1 auto}
+  .co-foot .co-msg{flex-basis:100%;order:-1}
+}
 </style>
 </head>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
@@ -2067,7 +2107,18 @@ tr.has-children > td{border-bottom-color:transparent!important}
   </div>
 
   <div class="panel" id="owner-analysis-panel">
-    <h2 id="sec-owner">담당자별 현황 분석</h2>
+    <div class="sec-head-row">
+      <h2 id="sec-owner">담당자별 현황 분석</h2>
+      <label class="sort-inline">정렬
+        <select id="owner-sort" onchange="setOwnerSort(this.value)">
+          <option value="default">등록순</option>
+          <option value="name">가나다순</option>
+          <option value="count">프로젝트 많은 순</option>
+          <option value="mine">내 카테고리 순서</option>
+        </select>
+      </label>
+      <button type="button" class="co-open" onclick="openCatOrder()" title="내 카테고리 순서 정하기">⚙ 내 순서</button>
+    </div>
     <p class="status-msg" style="margin-bottom:12px">담당자마다 프로젝트 개수·평균 진행률·신호등 분포·단계 현황을 한눈에 볼 수 있어요. <b>카드를 클릭하면 아래 목록·차트·스냅샷 비교까지 그 담당자로 필터링</b>돼요.</p>
     <div id="owner-analysis-grid"></div>
   </div>
@@ -2099,19 +2150,23 @@ tr.has-children > td{border-bottom-color:transparent!important}
         <button onclick="resetWeeklyReview(this)">이번 주 확인 초기화</button>
       </div>
     </div>
-    <div class="add-row" style="grid-template-columns:1fr 170px 200px;margin-bottom:12px">
+    <div class="add-row" style="grid-template-columns:1fr 170px 200px auto;margin-bottom:12px">
       <input id="proj-search" placeholder="🔍 프로젝트명·담당자·내용·코멘트 검색" oninput="render()">
       <select id="proj-ptype-filter" onchange="render()" title="유형으로 보기"></select>
-      <select id="proj-sort" onchange="render()">
+      <select id="proj-sort" onchange="setProjSort(this.value)">
         <option value="default">기본 순서</option>
+        <option value="name">프로젝트명 가나다순</option>
+        <option value="name-desc">프로젝트명 역순 (하→가)</option>
+        <option value="mine">내 카테고리 순서</option>
+        <option value="owner">담당자 가나다순</option>
         <option value="deadline">마감임박순</option>
-        <option value="owner">담당자순</option>
         <option value="updated">최근업데이트순</option>
         <option value="priority">중요도순</option>
       </select>
+      <button type="button" class="co-open" onclick="openCatOrder()" title="내 카테고리 순서 정하기">⚙ 내 순서</button>
     </div>
     <div class="tbl-scroll w-list"><table>
-      <thead><tr><th>담당자</th><th style="width:118px">유형</th><th>프로젝트명</th><th>요약</th><th style="width:64px">상태</th><th style="width:170px">현재 단계</th><th style="width:84px;white-space:nowrap" title="공유할 프로젝트만 체크하고 아래 [영업 페이지에 반영]을 눌러주세요">영업 공유</th><th style="width:56px;white-space:nowrap" title="이번 주 확인 완료">확인</th><th style="width:60px"></th></tr></thead>
+      <thead><tr><th class="sortable" data-sort="owner" onclick="toggleHeaderSort('owner')" title="클릭하면 담당자 가나다순으로 정렬">담당자 <span class="sort-ind" id="si-owner"></span></th><th style="width:118px">유형</th><th class="sortable" data-sort="name" onclick="toggleHeaderSort('name')" title="클릭하면 [카테고리] → 프로젝트명 가나다순 ↔ 역순">프로젝트명 <span class="sort-ind" id="si-name"></span></th><th>요약</th><th style="width:64px">상태</th><th style="width:170px">현재 단계</th><th style="width:84px;white-space:nowrap" title="공유할 프로젝트만 체크하고 아래 [영업 페이지에 반영]을 눌러주세요">영업 공유</th><th style="width:56px;white-space:nowrap" title="이번 주 확인 완료">확인</th><th style="width:60px"></th></tr></thead>
       <tbody id="proj-body"></tbody>
     </table></div>
     <div class="footer-actions">
@@ -2802,6 +2857,7 @@ if(AUTH_CONFIGURED){
     authOverlay('hide');
     applyRoleUI();
     _gateResolve();
+    loadMyPrefs();
   });
 }
 
@@ -3206,6 +3262,145 @@ function scopeByTeam(list){ return activeTeam === 'all' ? list : list.filter(p =
 function teamFilePrefix(){ return teamLabel().split(' ').join(''); }
 function teamLabel(){ return activeTeam === 'all' ? '상품마케팅팀 전체' : TEAMS[activeTeam].label; }
 let currentDetailId = null;
+
+// ── 가나다순 정렬 ─────────────────────────────
+const KO_COLLATOR = new Intl.Collator('ko', {numeric:true, sensitivity:'base'});
+function koCompare(a, b){ return KO_COLLATOR.compare(String(a||''), String(b||'')); }
+// 프로젝트명 정렬: 앞의 [꼬치]·[선물세트] 같은 카테고리 머리표 기준으로 먼저 묶고(ㄱㄴㄷ순), 그 안에서 이름 ㄱㄴㄷ순.
+// 머리표가 없는 프로젝트는 머리표 있는 것들 뒤에 이름순으로 온다.
+function nameSortKey(name){ return String(name||'').replace(/\s+/g, ' ').trim(); }       // 줄바꿈·특수공백 정리
+function nameCategoryOf(name){ const m = /^\s*\[([^\]]*)\]/.exec(String(name||'')); return m ? m[1].trim() : ''; }
+function compareByName(a, b){
+  const ca = nameCategoryOf(a.name), cb = nameCategoryOf(b.name);
+  if(!!ca !== !!cb) return ca ? -1 : 1;                 // 머리표 있는 것 먼저
+  return koCompare(ca, cb) || koCompare(nameSortKey(a.name), nameSortKey(b.name));
+}
+function loadPref(k, d){ try{ return localStorage.getItem(k) || d; }catch(e){ return d; } }
+function savePref(k, v){ try{ localStorage.setItem(k, v); }catch(e){} }
+// ── 내가 정한 카테고리 순서 (계정별 저장: dashboard/prefs/{이메일키}.catOrder, 로그인 없으면 이 기기에만) ──
+let myCatOrder = (()=>{ try{ return JSON.parse(localStorage.getItem('dash_cat_order') || '[]'); }catch(e){ return []; } })();
+function catRank(cat){
+  if(!cat) return [2, ''];                                  // 머리표 없음 → 맨 뒤
+  const i = myCatOrder.indexOf(cat);
+  return i >= 0 ? [0, i] : [1, cat];                        // 정한 순서 → 그 다음 새 카테고리(가나다)
+}
+function compareByMine(a, b){
+  const ra = catRank(nameCategoryOf(a.name)), rb = catRank(nameCategoryOf(b.name));
+  if(ra[0] !== rb[0]) return ra[0] - rb[0];
+  const c = (ra[0] === 0) ? ra[1] - rb[1] : koCompare(ra[1], rb[1]);
+  return c || koCompare(nameSortKey(a.name), nameSortKey(b.name));
+}
+function allCategories(){
+  const cnt = {};
+  projects.filter(isActive).filter(inTeam).forEach(p=>{ const c = nameCategoryOf(p.name); if(c) cnt[c] = (cnt[c]||0) + 1; });
+  const known = myCatOrder.filter(c=>cnt[c]);
+  const rest = Object.keys(cnt).filter(c=>!known.includes(c)).sort(koCompare);
+  return {list: known.concat(rest), cnt, untagged: projects.filter(isActive).filter(inTeam).filter(p=>!nameCategoryOf(p.name)).length};
+}
+async function loadMyPrefs(){
+  if(!(AUTH.enabled && _fbdb && AUTH.email)) return;
+  try{
+    const v = (await _fbdb.ref(FIREBASE_ROOT + '/prefs/' + emailKey(AUTH.email)).once('value')).val();
+    if(v && Array.isArray(v.catOrder)){
+      myCatOrder = v.catOrder;
+      try{ localStorage.setItem('dash_cat_order', JSON.stringify(myCatOrder)); }catch(e){}
+      render();
+    }
+  }catch(e){ console.warn('내 순서 불러오기 실패', e); }
+}
+async function saveMyCatOrder(list){
+  myCatOrder = list.slice();
+  try{ localStorage.setItem('dash_cat_order', JSON.stringify(myCatOrder)); }catch(e){}
+  if(AUTH.enabled && _fbdb && AUTH.email){
+    await _fbdb.ref(FIREBASE_ROOT + '/prefs/' + emailKey(AUTH.email)).update({catOrder: myCatOrder, updatedAt: new Date().toISOString()});
+  }
+}
+// 순서 설정 창
+let catDraft = null;
+function openCatOrder(){
+  closeCatOrder();
+  const info = allCategories();
+  catDraft = info.list.slice();
+  const box = document.createElement('div');
+  box.id = 'cat-order-modal';
+  box.innerHTML =
+    '<div class="co-card" role="dialog" aria-label="내 카테고리 순서">' +
+      '<div class="co-head"><b>⚙ 내 카테고리 순서</b><button type="button" class="co-x" onclick="closeCatOrder()" aria-label="닫기">✕</button></div>' +
+      '<p class="co-desc">프로젝트명 앞 <b>[카테고리]</b>를 보고 싶은 순서로 옮겨주세요. 같은 카테고리 안은 가나다순이에요. <b>이 순서는 내 계정에만 저장</b>되고 다른 팀원 화면에는 영향이 없어요.</p>' +
+      '<ol class="co-list" id="co-list"></ol>' +
+      (info.untagged ? '<p class="co-desc co-note">머리표가 없는 프로젝트 ' + info.untagged + '건은 맨 뒤에 가나다순으로 나와요.</p>' : '') +
+      '<div class="co-foot"><button type="button" onclick="resetCatDraft()">가나다순으로 되돌리기</button><span class="co-msg" id="co-msg"></span>' +
+      '<button type="button" onclick="closeCatOrder()">취소</button><button type="button" class="primary" onclick="applyCatOrder()">저장하고 적용</button></div>' +
+    '</div>';
+  box.addEventListener('click', e=>{ if(e.target === box) closeCatOrder(); });
+  document.body.appendChild(box);
+  renderCatDraft(info.cnt);
+}
+function closeCatOrder(){ const m = document.getElementById('cat-order-modal'); if(m) m.remove(); }
+function renderCatDraft(cnt){
+  cnt = cnt || allCategories().cnt;
+  const ol = document.getElementById('co-list'); if(!ol) return;
+  ol.innerHTML = '';
+  if(!catDraft.length){ ol.innerHTML = '<li class="co-empty">프로젝트명에 [카테고리] 머리표가 붙은 프로젝트가 없어요.</li>'; return; }
+  catDraft.forEach((c, i)=>{
+    const li = document.createElement('li');
+    li.className = 'co-item'; li.draggable = true; li.dataset.i = i;
+    li.innerHTML = '<span class="co-grip" title="끌어서 옮기기">⠿</span><span class="co-num">' + (i+1) + '</span>' +
+      '<span class="co-name">[' + escapeHtml(c) + ']</span><span class="co-cnt">' + (cnt[c]||0) + '건</span>';
+    const up = document.createElement('button'); up.type = 'button'; up.className = 'co-mv'; up.textContent = '▲'; up.title = '위로';
+    up.disabled = i === 0; up.onclick = ()=>moveCat(i, -1);
+    const dn = document.createElement('button'); dn.type = 'button'; dn.className = 'co-mv'; dn.textContent = '▼'; dn.title = '아래로';
+    dn.disabled = i === catDraft.length - 1; dn.onclick = ()=>moveCat(i, 1);
+    li.append(up, dn);
+    li.addEventListener('dragstart', e=>{ e.dataTransfer.setData('text/plain', String(i)); li.classList.add('dragging'); });
+    li.addEventListener('dragend', ()=>li.classList.remove('dragging'));
+    li.addEventListener('dragover', e=>{ e.preventDefault(); li.classList.add('over'); });
+    li.addEventListener('dragleave', ()=>li.classList.remove('over'));
+    li.addEventListener('drop', e=>{
+      e.preventDefault(); li.classList.remove('over');
+      const from = +e.dataTransfer.getData('text/plain'); if(isNaN(from) || from === i) return;
+      const [it] = catDraft.splice(from, 1); catDraft.splice(i, 0, it); renderCatDraft();
+    });
+    ol.appendChild(li);
+  });
+}
+function moveCat(i, d){
+  const j = i + d; if(j < 0 || j >= catDraft.length) return;
+  [catDraft[i], catDraft[j]] = [catDraft[j], catDraft[i]];
+  renderCatDraft();
+  const btn = document.querySelectorAll('#co-list .co-item')[j]?.querySelectorAll('.co-mv')[d < 0 ? 0 : 1];
+  if(btn && !btn.disabled) btn.focus();
+}
+function resetCatDraft(){ catDraft.sort(koCompare); renderCatDraft(); }
+async function applyCatOrder(){
+  const msg = document.getElementById('co-msg');
+  // 지금 목록에 없는(보관함 등) 카테고리의 예전 순서는 뒤에 이어 붙여 보존
+  const keep = myCatOrder.filter(c=>!catDraft.includes(c));
+  try{
+    if(msg) msg.textContent = '저장 중...';
+    await saveMyCatOrder(catDraft.concat(keep));
+  }catch(e){ if(msg) msg.textContent = '저장 실패: ' + (e && e.message || e); return; }
+  closeCatOrder();
+  setProjSort('mine', true);
+  ownerSortMode = 'mine'; savePref('dash_owner_sort', 'mine');
+  render();
+}
+
+let ownerSortMode = loadPref('dash_owner_sort', 'default');
+let projSortMode = loadPref('dash_proj_sort', 'default');
+function setProjSort(v, noRender){ projSortMode = v || 'default'; savePref('dash_proj_sort', projSortMode); if(!noRender) renderKeepingView('sec-list'); }
+function toggleHeaderSort(k){
+  if(k === 'owner') setProjSort(projSortMode === 'owner' ? 'default' : 'owner');
+  else setProjSort(projSortMode === 'name' ? 'name-desc' : (projSortMode === 'name-desc' ? 'default' : 'name'));
+}   // default | name | count
+function setOwnerSort(v){ ownerSortMode = v; savePref('dash_owner_sort', v); renderKeepingView('owner-analysis-panel'); }
+// 담당자 이름 목록을 현재 정렬 기준으로 정렬 (counts: 담당자별 프로젝트 수)
+function sortOwnerNames(names, counts){
+  const list = names.slice();
+  if(ownerSortMode === 'name' || ownerSortMode === 'mine') list.sort(koCompare);
+  else if(ownerSortMode === 'count') list.sort((a,b)=> ((counts&&counts[b])||0) - ((counts&&counts[a])||0) || koCompare(a,b));
+  return list;
+}
 
 function ownerColor(owner){
   if(!ownerColorMap[owner]) ownerColorMap[owner] = COLORS[Object.keys(ownerColorMap).length % COLORS.length];
@@ -5456,7 +5651,11 @@ function render(){
 
   // 정렬
   const sortEl = document.getElementById('proj-sort');
-  const sortVal = sortEl ? sortEl.value : 'default';
+  if(sortEl && sortEl.value !== projSortMode) sortEl.value = projSortMode;
+  const sortVal = projSortMode;
+  const siO = document.getElementById('si-owner'), siN = document.getElementById('si-name');
+  if(siO) siO.textContent = sortVal === 'owner' ? '▲' : '';
+  if(siN) siN.textContent = sortVal === 'name' ? '▲' : (sortVal === 'name-desc' ? '▼' : '');
   function nearestDeadline(p){
     const ends = p.steps.filter(s=>s.end && s.status!=='완료').map(s=>s.end);
     if(ends.length===0) return null;
@@ -5472,7 +5671,13 @@ function render(){
       return da < db ? -1 : (da > db ? 1 : 0);
     });
   } else if(sortVal === 'owner'){
-    activeProjects = activeProjects.slice().sort((a,b)=> a.owner.localeCompare(b.owner) || a.name.localeCompare(b.name));
+    activeProjects = activeProjects.slice().sort((a,b)=> koCompare(a.owner, b.owner) || compareByName(a, b));
+  } else if(sortVal === 'name'){
+    activeProjects = activeProjects.slice().sort((a,b)=> compareByName(a, b) || koCompare(a.owner, b.owner));
+  } else if(sortVal === 'mine'){
+    activeProjects = activeProjects.slice().sort((a,b)=> compareByMine(a, b) || koCompare(a.owner, b.owner));
+  } else if(sortVal === 'name-desc'){
+    activeProjects = activeProjects.slice().sort((a,b)=> compareByName(b, a) || koCompare(a.owner, b.owner));
   } else if(sortVal === 'updated'){
     activeProjects = activeProjects.slice().sort((a,b)=> (b.updatedAt||'').localeCompare(a.updatedAt||''));
   } else if(sortVal === 'priority'){
@@ -5616,7 +5821,9 @@ function render(){
   });
 
   // 필터 버튼 목록은 항상 전체 담당자 기준으로 (필터 적용 후에도 다른 담당자로 전환 가능)
-  const owners = [...new Set(projects.filter(isActive).filter(inTeam).map(p=>p.owner))];
+  const ownerCounts = {};
+  projects.filter(isActive).filter(inTeam).forEach(p=>{ ownerCounts[p.owner] = (ownerCounts[p.owner]||0) + 1; });
+  const owners = sortOwnerNames(Object.keys(ownerCounts), ownerCounts);   // 담당자별 현황 정렬과 같은 순서
 
   // 확인 진행률 + 방치 건수 표시
   const progEl = document.getElementById('review-progress');
@@ -5852,18 +6059,25 @@ function renderOwnerAnalysis(){
     grid.appendChild(empty);
     return;
   }
-  const order = []; const map = {};
+  let order = []; const map = {};
   allActive.forEach(p=>{
     if(!map[p.owner]){ map[p.owner]=[]; order.push(p.owner); }
     map[p.owner].push(p);
   });
+  const colorIdx = {}; order.forEach((o,i)=>colorIdx[o]=i);            // 정렬을 바꿔도 담당자 색은 그대로
+  const counts = {}; order.forEach(o=>counts[o]=map[o].length);
+  order = sortOwnerNames(order, counts);
+  const sortSel = document.getElementById('owner-sort'); if(sortSel) sortSel.value = ownerSortMode;
+  // 카드 안 프로젝트도 가나다순 모드에서는 이름순
+  if(ownerSortMode === 'name') order.forEach(o=>map[o].sort(compareByName));
+  else if(ownerSortMode === 'mine') order.forEach(o=>map[o].sort(compareByMine));
 
   const wrap = document.createElement('div');
   wrap.className = 'owner-grid';
 
-  order.forEach((owner, oi)=>{
+  order.forEach((owner)=>{
     const projs = map[owner];
-    const ocolor = COLORS[oi % COLORS.length];
+    const ocolor = COLORS[colorIdx[owner] % COLORS.length];
     const avg = Math.round(projs.reduce((s,p)=>s+progressOf(p),0)/projs.length);
     const overdueN = projs.filter(p=>p.steps.some(isOverdue)).length;
     const upcomingN = projs.filter(p=>p.steps.some(s=>isUpcoming(s))).length;
